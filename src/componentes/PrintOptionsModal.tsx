@@ -1,17 +1,25 @@
-import { Modal, StyleSheet, Text, View, Pressable, ScrollView } from "react-native";
+import {
+  Modal,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  ScrollView,
+} from "react-native";
 import { FontAwesome5 } from "@expo/vector-icons";
 import CustomButton from "./CustomButton";
-import { CartItem, PaymentMethod } from "../store/cartStore";
+import { CartItem, PaymentMethod, PAYMENT_CONFIG } from "../store/cartStore";
 
 interface PrintOptionsModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectOption: (option: "ticket" | "invoice") => void;
+  onSelectOption: (option: "ticket" | "invoice", aplicarImp?: boolean) => void;
   saleData?: {
     items: CartItem[];
-    payment: PaymentMethod | null;
+    payments: PaymentMethod[];
     total: number;
     numSale: number;
+    cambio: number;
   } | null;
 }
 
@@ -51,19 +59,26 @@ export default function PrintOptionsModal({
                 ))}
               </ScrollView>
               <View style={styles.previewTotals}>
-                <View style={styles.totalsRow}>
-                  <Text>Pago ({saleData.payment?.type}):</Text>
-                  <Text>C$ {saleData.payment?.amount.toFixed(2) || "0.00"}</Text>
-                </View>
-                {saleData.payment?.change && saleData.payment.change > 0 ? (
+                {saleData.payments.map((p, i) => {
+                  const cfg = PAYMENT_CONFIG[p.type];
+                  return (
+                    <View key={i} style={styles.totalsRow}>
+                      <Text>{cfg?.label || p.type}:</Text>
+                      <Text>C$ {p.amount.toFixed(2)}</Text>
+                    </View>
+                  );
+                })}
+                {saleData.cambio > 0 && (
                   <View style={styles.totalsRow}>
                     <Text>Cambio:</Text>
-                    <Text>C$ {saleData.payment.change.toFixed(2)}</Text>
+                    <Text>C$ {saleData.cambio.toFixed(2)}</Text>
                   </View>
-                ) : null}
+                )}
                 <View style={[styles.totalsRow, { marginTop: 5 }]}>
                   <Text style={styles.totalBold}>TOTAL:</Text>
-                  <Text style={styles.totalBold}>C$ {saleData.total.toFixed(2)}</Text>
+                  <Text style={styles.totalBold}>
+                    C$ {saleData.total.toFixed(2)}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -72,6 +87,13 @@ export default function PrintOptionsModal({
           <Text style={styles.subtitle}>
             ¿En qué formato deseas imprimir el comprobante?
           </Text>
+          <View>
+            <CustomButton
+              iconName=""
+              title="Aplicar impuesto"
+              onPress={() => onSelectOption("ticket", true)}
+            />
+          </View>
 
           <View style={styles.buttonsContainer}>
             <CustomButton

@@ -3,12 +3,14 @@ import { shareAsync, isAvailableAsync } from "expo-sharing";
 import { CartItem } from "../store/cartStore";
 import { PaymentMethod } from "../store/cartStore";
 import { Alert } from "react-native";
+import { empresaRepository } from "../database/repositories/empresaRepository";
 
 export const PrintTicket = async (
   items: CartItem[],
   payments: PaymentMethod[],
   total: number,
-  numSale: number
+  numSale: number,
+  aplicarImp?: boolean
 ) => {
   try {
     let productFormat: string = "";
@@ -22,9 +24,17 @@ export const PrintTicket = async (
       `;
     }
 
+    let impuesto;
+    // if (aplicarImp) {
+    impuesto = (await empresaRepository.getById(1)) as any;
+    console.log(impuesto.impuesto);
+    // console.log(aplicarImp);
+    // }
+    let totalImpuesto = total * impuesto.impuesto;
+
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
-    const hasEfectivo = payments.some((p) => p.type === "efectivo");
-    const cambio = hasEfectivo ? montoPagado - total : 0;
+    const soloEfectivo = payments.every((p) => p.type === "efectivo");
+    const cambio = soloEfectivo ? montoPagado - total : 0;
 
     let paymentsFormat = "";
     for (let p of payments) {
@@ -77,7 +87,8 @@ export const PrintTicket = async (
           ${paymentsFormat}
           <div class="summary-total">
             <span>TOTAL</span>
-            <span>C$ ${total.toFixed(2)}</span>
+            <span>C$ ${total + totalImpuesto}</span>
+            
           </div>
           ${cambio > 0 ? `<div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;"><span>CAMBIO</span><span>C$ ${cambio.toFixed(2)}</span></div>` : ``}
         </div>
@@ -118,8 +129,8 @@ export const PrintInvoice = async (
     }
 
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
-    const hasEfectivo = payments.some((p) => p.type === "efectivo");
-    const cambio = hasEfectivo ? montoPagado - total : 0;
+    const soloEfectivo = payments.every((p) => p.type === "efectivo");
+    const cambio = soloEfectivo ? montoPagado - total : 0;
 
     const today = new Date().toLocaleString();
 
@@ -288,7 +299,7 @@ export const PrintSalesReport = async (
         <tr>
           <td>#${sale.id}</td>
           <td>${sale.fecha.split(" ")[0]}</td>
-          <td>${sale.metodo_pago ? sale.metodo_pago.toUpperCase() : "—"}</td>
+          <td>${sale.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
           <td style="color: ${sale.estado ? "red" : "black"}">
             ${sale.estado ? "ANULADA" : "C$ " + sale.total.toFixed(2)}
           </td>
@@ -329,7 +340,7 @@ export const PrintSalesReport = async (
       <table>
         <thead>
           <tr>
-            <th>ID Venta</th>
+            <th>Número Venta</th>
             <th>Fecha</th>
             <th>Método</th>
             <th>Monto</th>

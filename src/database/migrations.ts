@@ -43,17 +43,28 @@ export const runMigrations = async () => {
       metodo_pago TEXT NOT NULL,
       monto REAL NOT NULL
       );
+      
+      CREATE TABLE IF NOT EXISTS empresa (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,      
+      impuesto REAL NOT NULL
+      );
     `);
 
     const database = await db;
     try {
-      await database.runAsync("ALTER TABLE movimientos_inventario ADD COLUMN estado BOOLEAN DEFAULT false");
+      await database.runAsync(
+        "ALTER TABLE movimientos_inventario ADD COLUMN estado BOOLEAN DEFAULT false"
+      );
     } catch {}
     try {
-      await database.runAsync("ALTER TABLE movimientos_inventario ADD COLUMN id_venta INTEGER DEFAULT NULL");
+      await database.runAsync(
+        "ALTER TABLE movimientos_inventario ADD COLUMN id_venta INTEGER DEFAULT NULL"
+      );
     } catch {}
     try {
-      await database.runAsync("ALTER TABLE ventas ADD COLUMN estado BOOLEAN DEFAULT false");
+      await database.runAsync(
+        "ALTER TABLE ventas ADD COLUMN estado BOOLEAN DEFAULT false"
+      );
     } catch {}
 
     try {

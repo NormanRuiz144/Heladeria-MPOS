@@ -20,9 +20,8 @@ const icons: Record<string, string> = {
   transferencia: "money-check-alt",
 };
 
-const hasEfectivo = (metodos: MetodoPagoItem[]) => {
-  return metodos.some((m) => m.metodo_pago === "efectivo");
-};
+const hasEfectivo = (metodos: MetodoPagoItem[]) =>
+  metodos.some((m) => m.metodo_pago === "efectivo");
 
 export default function SalesCard({
   item,

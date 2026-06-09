@@ -14,7 +14,7 @@ import SalesCard from "./SalesCard";
 import { MovementRepository } from "../database/repositories/movementRepository";
 import { SaleDetailRepository } from "../database/repositories/saleDetailRepository";
 import { ProductRepository } from "../database/repositories/productRepository";
-import { CartItem, PaymentMethod } from "../store/cartStore";
+import { CartItem, PaymentMethod, PaymentType } from "../store/cartStore";
 import { Product } from "../app/movimientos/crear";
 import { PrintTicket, PrintInvoice } from "../print_service/Print";
 import PrintOptionsModal from "./PrintOptionsModal";
@@ -117,10 +117,15 @@ export default function SalesHistory() {
       });
     }
     const payments: PaymentMethod[] = metodos_pago.map((mp) => ({
-      type: mp.metodo_pago as "efectivo" | "tarjeta" | "transferencia",
+      type: mp.metodo_pago as PaymentType,
       amount: mp.monto,
     }));
-    setSelectedPrintData({ items: listaProductsSaled, payments, total, numSale: id });
+    setSelectedPrintData({
+      items: listaProductsSaled,
+      payments,
+      total,
+      numSale: id,
+    });
     setShowPrintModal(true);
   };
 

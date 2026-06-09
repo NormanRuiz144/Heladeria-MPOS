@@ -11,8 +11,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SaleRepository } from "../../database/repositories/saleRepository";
+import { MetodoPagoRepository } from "../../database/repositories/metodoPagoRepository";
 import SalesCard from "../../componentes/SalesCard";
-import { IVenta } from "../../componentes/SalesHistory";
+import { IVenta, MetodoPagoItem } from "../../componentes/SalesHistory";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { PrintSalesReport } from "../../print_service/Print";
 
@@ -58,7 +59,10 @@ export default function Reportes() {
         dateStart,
         dateEnd
       )) as IVenta[];
-      console.log(data);
+      for (const venta of data) {
+        const metodos = await MetodoPagoRepository.getByVentaId(venta.id);
+        venta.metodos_pago = metodos as MetodoPagoItem[];
+      }
       setSales(data);
 
       // Calculamos el total (solo sumamos ventas activas, estado === false)

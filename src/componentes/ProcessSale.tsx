@@ -1,10 +1,11 @@
 import { Alert, StyleSheet, View } from "react-native";
 import { useCartStore } from "../store/cartStore";
+import { db } from "../database/database";
 import { MovementRepository } from "../database/repositories/movementRepository";
 import { ProductRepository } from "../database/repositories/productRepository";
 import { MetodoPagoRepository } from "../database/repositories/metodoPagoRepository";
 import PaymentModal from "./PaymentModal";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CustomButton from "./CustomButton";
 import { SaleRepository } from "../database/repositories/saleRepository";
 import { SaleDetailRepository } from "../database/repositories/saleDetailRepository";
@@ -16,17 +17,32 @@ export default function ProcessSale() {
   const total = useCartStore((state) => state.total);
   const clearCart = useCartStore((state) => state.clearCart);
   const payments = useCartStore((state) => state.payments);
+  const isProcessing = useRef(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
 
-  const handlePrintSelect = async (option: "ticket" | "invoice") => {
+  const handlePrintSelect = async (
+    option: "ticket" | "invoice",
+    aplicarImp?: boolean
+  ) => {
     setShowPrintModal(false);
     if (saleData) {
       if (option === "ticket") {
-        await PrintTicket(saleData.items, saleData.payments, saleData.total, saleData.numSale);
+        await PrintTicket(
+          saleData.items,
+          saleData.payments,
+          saleData.total,
+          saleData.numSale,
+          aplicarImp
+        );
       } else {
-        await PrintInvoice(saleData.items, saleData.payments, saleData.total, saleData.numSale);
+        await PrintInvoice(
+          saleData.items,
+          saleData.payments,
+          saleData.total,
+          saleData.numSale
+        );
       }
       setSaleData(null);
     }
@@ -37,54 +53,78 @@ export default function ProcessSale() {
   }, [payments]);
 
   const handleSale = async () => {
+    if (isProcessing.current) return;
     try {
       if (items.length > 0 && total > 0 && payments.length === 0) {
         setShowPayment(true);
         return;
       }
       if (items.length > 0 && total && payments.length > 0) {
+        isProcessing.current = true;
+        const database = await db;
         const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
-        const hasEfectivo = payments.some((p) => p.type === "efectivo");
-        const cambio = hasEfectivo ? montoPagado - total : 0;
+        const soloEfectivo = payments.every((p) => p.type === "efectivo");
+        const cambio = soloEfectivo ? montoPagado - total : 0;
 
-        const resultsale = await SaleRepository.create(total, montoPagado, cambio);
+        await database.execAsync("BEGIN TRANSACTION");
 
-        for (const payment of payments) {
-          await MetodoPagoRepository.create(
-            resultsale.lastInsertRowId,
-            payment.type,
-            payment.amount
+        try {
+          const resultsale = await SaleRepository.create(
+            total,
+            montoPagado,
+            cambio
           );
+
+          for (const payment of payments) {
+            await MetodoPagoRepository.create(
+              resultsale.lastInsertRowId,
+              payment.type,
+              payment.amount
+            );
+          }
+
+          for (const item of items) {
+            await MovementRepository.create(
+              item.product.id,
+              "Venta POS",
+              "salida",
+              item.quantity,
+              resultsale.lastInsertRowId
+            );
+            await ProductRepository.adjustStock(
+              item.product.id,
+              -item.quantity
+            );
+
+            await SaleDetailRepository.create(
+              resultsale.lastInsertRowId,
+              item.product.id,
+              item.quantity,
+              item.product.precio
+            );
+          }
+
+          await database.execAsync("COMMIT");
+
+          setShowPayment(false);
+          setSaleData({
+            items: [...items],
+            payments,
+            cambio,
+            total,
+            numSale: resultsale.lastInsertRowId,
+          });
+          setShowPrintModal(true);
+          clearCart();
+        } catch (txError) {
+          await database.execAsync("ROLLBACK");
+          throw txError;
         }
-
-        for (const item of items) {
-          await MovementRepository.create(
-            item.product.id,
-            "Venta POS",
-            "salida",
-            item.quantity,
-            resultsale.lastInsertRowId
-          );
-          await ProductRepository.adjustStock(item.product.id, -item.quantity);
-
-          await SaleDetailRepository.create(
-            resultsale.lastInsertRowId,
-            item.product.id,
-            item.quantity,
-            item.product.precio
-          );
-        }
-        setShowPayment(false);
-        Alert.alert(
-          "Exito",
-          "Venta procesada correctamente. Seleccione el formato de comprobante."
-        );
-        setSaleData({ items: [...items], payments, total, numSale: resultsale.lastInsertRowId });
-        setShowPrintModal(true);
-        clearCart();
       }
     } catch (error) {
       Alert.alert("Error", `No se pudo procesar la venta. ${error}`);
+    } finally {
+      isProcessing.current = false;
     }
   };
   return (

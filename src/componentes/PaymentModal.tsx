@@ -8,38 +8,27 @@ import {
   View,
   ScrollView,
 } from "react-native";
-import { useCartStore, PaymentMethod } from "../store/cartStore";
+import {
+  useCartStore,
+  PaymentMethod,
+  PaymentType,
+  PAYMENT_TYPES,
+  PAYMENT_CONFIG,
+} from "../store/cartStore";
 import CustomButton from "./CustomButton";
 import { useEffect, useRef, useState } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
-
-interface CommittedPayment {
-  type: "efectivo" | "tarjeta" | "transferencia";
-  amount: number;
-}
 
 interface PaymentModalProps {
   visible: boolean;
   onClose: () => void;
 }
 
-const METHOD_CONFIG: Record<string, { icon: string; label: string }> = {
-  efectivo: { icon: "money-bill", label: "Efectivo" },
-  tarjeta: { icon: "credit-card", label: "Tarjeta" },
-  transferencia: { icon: "money-check-alt", label: "Transferencia" },
-};
-
-const ALL_TYPES: ("efectivo" | "tarjeta" | "transferencia")[] = [
-  "efectivo",
-  "tarjeta",
-  "transferencia",
-];
-
 export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
   const total = useCartStore((state) => state.total);
   const setPayments = useCartStore((state) => state.setPayments);
-  const [committed, setCommitted] = useState<CommittedPayment[]>([]);
-  const [selectedType, setSelectedType] = useState<"efectivo" | "tarjeta" | "transferencia" | null>(null);
+  const [committed, setCommitted] = useState<PaymentMethod[]>([]);
+  const [selectedType, setSelectedType] = useState<PaymentType | null>(null);
   const [inputAmount, setInputAmount] = useState("");
   const inputRef = useRef<TextInput>(null);
 
@@ -57,6 +46,9 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
   const pendiente = total - subtotal;
   const completado = subtotal >= total;
   const pagoCompletado = totalPagado >= total && currentValue === 0;
+  const esSoloEfectivo =
+    committed.every((c) => c.type === "efectivo") &&
+    (!selectedType || selectedType === "efectivo");
 
   const isTypeCommitted = (type: string) =>
     committed.some((c) => c.type === type);
@@ -68,11 +60,24 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
     const amt = parseFloat(inputAmount);
     if (!selectedType) return false;
     if (!amt || amt <= 0) {
-      Alert.alert("Error", `Ingrese un monto válido mayor a 0 para ${METHOD_CONFIG[selectedType].label}`);
+      Alert.alert(
+        "Error",
+        `Ingrese un monto válido mayor a 0 para ${PAYMENT_CONFIG[selectedType].label}`
+      );
       return false;
     }
     if (isTypeCommitted(selectedType)) {
-      Alert.alert("Método ya usado", `Ya registró un pago con ${METHOD_CONFIG[selectedType].label}. Quite el pago si desea cambiarlo.`);
+      Alert.alert(
+        "Método ya usado",
+        `Ya registró un pago con ${PAYMENT_CONFIG[selectedType].label}. Quite el pago si desea cambiarlo.`
+      );
+      return false;
+    }
+    const soloEfectivo =
+      committed.every((c) => c.type === "efectivo") &&
+      selectedType === "efectivo";
+    if (!soloEfectivo && totalPagado + amt > total) {
+      Alert.alert("Error", "No puede exceder el monto a pagar");
       return false;
     }
     setCommitted([...committed, { type: selectedType, amount: amt }]);
@@ -80,13 +85,19 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
     return true;
   };
 
-  const handleTypePress = (type: "efectivo" | "tarjeta" | "transferencia") => {
+  const handleTypePress = (type: PaymentType) => {
     if (isTypeBlocked(type)) {
-      Alert.alert("Pago completado", `El total de C$${total.toFixed(2)} ya fue cubierto. Si desea agregar más, quite un pago primero.`);
+      Alert.alert(
+        "Pago completado",
+        `El total de C$${total.toFixed(2)} ya fue cubierto. Si desea agregar más, quite un pago primero.`
+      );
       return;
     }
     if (isTypeCommitted(type) && type !== selectedType) {
-      Alert.alert("Método ya usado", `Ya pagó con ${METHOD_CONFIG[type].label}. Quite el pago si desea cambiarlo.`);
+      Alert.alert(
+        "Método ya usado",
+        `Ya pagó con ${PAYMENT_CONFIG[type].label}. Quite el pago si desea cambiarlo.`
+      );
       return;
     }
     if (type === selectedType) {
@@ -135,8 +146,8 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
     }
     if (effective.length === 0) return false;
     const totalP = effective.reduce((s, c) => s + c.amount, 0);
-    const hasEfectivo = effective.some((c) => c.type === "efectivo");
-    return hasEfectivo ? totalP >= total : totalP === total;
+    const soloEfectivo = effective.every((c) => c.type === "efectivo");
+    return soloEfectivo ? totalP >= total : totalP === total;
   };
 
   const handleProcess = () => {
@@ -147,8 +158,8 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
     }
     if (finalCommitted.length === 0) return;
     const totalP = finalCommitted.reduce((s, c) => s + c.amount, 0);
-    const hasEfectivo = finalCommitted.some((c) => c.type === "efectivo");
-    if (hasEfectivo ? totalP < total : totalP !== total) return;
+    const soloEfectivo = finalCommitted.every((c) => c.type === "efectivo");
+    if (soloEfectivo ? totalP < total : totalP !== total) return;
     const payments: PaymentMethod[] = finalCommitted.map((c) => ({
       type: c.type,
       amount: c.amount,
@@ -163,7 +174,6 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
       </Pressable>
       <View style={styles.container}>
         <Text style={styles.amount}>C${total.toFixed(2)}</Text>
-
         <View style={styles.progressBar}>
           <View
             style={[
@@ -180,7 +190,9 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
           {completado && currentValue === 0 ? " ✓" : ""}
         </Text>
         {!completado && (
-          <Text style={styles.pendingText}>Pendiente: C${pendiente.toFixed(2)}</Text>
+          <Text style={styles.pendingText}>
+            Pendiente: C${pendiente.toFixed(2)}
+          </Text>
         )}
 
         <View style={styles.calculatorBox}>
@@ -200,8 +212,8 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
         />
 
         <View style={styles.iconRow}>
-          {ALL_TYPES.map((type) => {
-            const cfg = METHOD_CONFIG[type];
+          {PAYMENT_TYPES.map((type) => {
+            const cfg = PAYMENT_CONFIG[type];
             const isSelected = selectedType === type;
             const isUsed = isTypeCommitted(type);
             const isBlocked = isTypeBlocked(type);
@@ -219,7 +231,15 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
                 <FontAwesome5
                   name={cfg.icon}
                   size={22}
-                  color={isSelected ? "#fff" : isUsed ? "#4A90D9" : isBlocked ? "#ccc" : "#666"}
+                  color={
+                    isSelected
+                      ? "#fff"
+                      : isUsed
+                        ? "#4A90D9"
+                        : isBlocked
+                          ? "#ccc"
+                          : "#666"
+                  }
                 />
                 <Text
                   style={[
@@ -234,9 +254,7 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
                 {isUsed && !isSelected && (
                   <Text style={styles.usedBadge}>✓</Text>
                 )}
-                {isBlocked && (
-                  <Text style={styles.blockedBadge}>🔒</Text>
-                )}
+                {isBlocked && <Text style={styles.blockedBadge}>🔒</Text>}
               </Pressable>
             );
           })}
@@ -247,14 +265,20 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
             <Text style={styles.paymentsTitle}>Pagos ingresados:</Text>
             <ScrollView style={styles.paymentsScroll} nestedScrollEnabled>
               {committed.map((c, i) => {
-                const cfg = METHOD_CONFIG[c.type];
+                const cfg = PAYMENT_CONFIG[c.type];
                 return (
                   <View key={i} style={styles.paymentRow}>
                     <FontAwesome5 name={cfg.icon} size={14} color="#4A90D9" />
                     <Text style={styles.paymentMethod}>{cfg.label}</Text>
-                    <Text style={styles.paymentAmount}>C${c.amount.toFixed(2)}</Text>
+                    <Text style={styles.paymentAmount}>
+                      C${c.amount.toFixed(2)}
+                    </Text>
                     <Pressable onPress={() => removePayment(i)} hitSlop={8}>
-                      <FontAwesome5 name="times-circle" size={18} color="#e74c3c" />
+                      <FontAwesome5
+                        name="times-circle"
+                        size={18}
+                        color="#e74c3c"
+                      />
                     </Pressable>
                   </View>
                 );
@@ -263,9 +287,14 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
           </View>
         )}
 
-        {subtotal > total && (
+        {esSoloEfectivo && subtotal > total && (
           <Text style={styles.cambioText}>
             Cambio: C${(subtotal - total).toFixed(2)}
+          </Text>
+        )}
+        {!esSoloEfectivo && subtotal > total && (
+          <Text style={styles.warningText}>
+            No puede exceder el monto a pagar
           </Text>
         )}
 
@@ -431,5 +460,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#4CAF50",
+  },
+  warningText: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#e74c3c",
   },
 });
