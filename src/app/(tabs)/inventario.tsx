@@ -12,6 +12,7 @@ interface Producto {
   precio: number;
   stock: number;
   codigo: string;
+  codigo_barras: string;
 }
 
 const inventario = () => {
@@ -20,10 +21,6 @@ const inventario = () => {
   const loadProductos = async () => {
     const data = (await ProductRepository.getAll()) as Producto[];
     setProductos(data);
-  };
-  const crearProducto = () => {
-    ProductRepository.create("Pepsi", 25, 10, "15151515");
-    console.log("Producto creado.");
   };
 
   const deleteProduct = async (id: number) => {

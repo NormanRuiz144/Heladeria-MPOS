@@ -1,15 +1,27 @@
-import { Alert, Button, StyleSheet, Text, TextInput } from "react-native";
+import { Alert, Button, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { router } from "expo-router";
+import BarcodeGenerator from "../../componentes/showBarCode";
 
 export default function CrearProductos() {
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [stock, setStock] = useState("");
   const [codigo, setCodigo] = useState("");
+  const [codigoBarras, setCodigoBarras] = useState("0");
+
+  const generarCodigoBarras = () => {
+    // Genera un código de barras único basado en el timestamp y un número aleatorio
+
+    setCodigoBarras((Math.random() * 1000000000).toFixed());
+  };
+
+  useEffect(() => {
+    generarCodigoBarras();
+  }, []);
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -51,7 +63,8 @@ export default function CrearProductos() {
         nombre,
         Number(precio),
         Number(stock),
-        codigo
+        codigo,
+        codigoBarras
       );
       Alert.alert("Exito", "Producto creado exitosamente.");
     } catch (error) {
@@ -78,6 +91,12 @@ export default function CrearProductos() {
         onChangeText={setPrecio}
       />
       <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
+      <View style={styles.barcodeContanier}>
+        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+          Código de Barras generado para el producto:
+        </Text>
+        <BarcodeGenerator value={codigoBarras} showText={true} />
+      </View>
       <Button title="Guardar" onPress={guardar} />
     </SafeAreaView>
   );
@@ -92,5 +111,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
+  },
+  barcodeContanier: {
+    alignItems: "center",
+    borderRadius: 8,
+    paddingBottom: 10,
   },
 });

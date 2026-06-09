@@ -6,6 +6,7 @@ export const runMigrations = async () => {
       CREATE TABLE IF NOT EXISTS productos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
+      codigo_barras TEXT UNIQUE,
       precio REAL NOT NULL,
       stock INTEGER DEFAULT 0,
       codigo TEXT,
@@ -48,6 +49,9 @@ export const runMigrations = async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,      
       impuesto REAL NOT NULL
       );
+
+      --ALTER TABLE productos ADD COLUMN codigo_barras TEXT;
+      CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo_barras);
     `);
 
     const database = await db;

@@ -1,9 +1,10 @@
-import { Alert, Button, StyleSheet, Text, TextInput } from "react-native";
+import { Alert, Button, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
 import { useEffect, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { router, useLocalSearchParams } from "expo-router";
+import BarcodeGenerator from "../../componentes/showBarCode";
 
 interface Producto {
   id: number;
@@ -11,6 +12,7 @@ interface Producto {
   precio: number;
   stock: number;
   codigo: string;
+  codigo_barras: string;
 }
 
 export default function editarProducto() {
@@ -19,6 +21,7 @@ export default function editarProducto() {
   const [precio, setPrecio] = useState("");
   const [stock, setStock] = useState("");
   const [codigo, setCodigo] = useState("");
+  const [codigoBarras, setCodigoBarras] = useState("");
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -57,6 +60,7 @@ export default function editarProducto() {
           setPrecio(product.precio.toString());
           setStock(product.stock.toString());
           setCodigo(product.codigo || "");
+          setCodigoBarras(product.codigo_barras || "");
         }
       }
     };
@@ -112,6 +116,12 @@ export default function editarProducto() {
         onChangeText={setPrecio}
       />
       <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
+      <View style={styles.barcodeContanier}>
+        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+          Código de Barras asignado para el producto:
+        </Text>
+        <BarcodeGenerator value={codigoBarras} showText={true} />
+      </View>
       <Button title="Editar" onPress={editar} />
     </SafeAreaView>
   );
@@ -126,5 +136,10 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
+  },
+  barcodeContanier: {
+    alignItems: "center",
+    borderRadius: 8,
+    paddingBottom: 10,
   },
 });

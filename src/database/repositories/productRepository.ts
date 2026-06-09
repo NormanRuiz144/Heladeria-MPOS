@@ -20,11 +20,17 @@ export const ProductRepository = {
     );
   },
 
-  async create(nombre: string, precio: number, stock: number, codigo: string) {
+  async create(
+    nombre: string,
+    precio: number,
+    stock: number,
+    codigo: string,
+    codigoBarras: string
+  ) {
     const database = await db;
     return database.runAsync(
-      "INSERT INTO productos (nombre,precio,stock,codigo) VALUES (?,?,?,?)",
-      [nombre, precio, stock, codigo]
+      "INSERT INTO productos (nombre,precio,stock,codigo,codigo_barras) VALUES (?,?,?,?,?)",
+      [nombre, precio, stock, codigo, codigoBarras]
     );
   },
   async update(
@@ -62,5 +68,11 @@ export const ProductRepository = {
     return (result as any).count === 0;
   },
 
-  
+  async searchByCodigoBarras(codigoBarras: string) {
+    const database = await db;
+    return database.getFirstAsync(
+      "SELECT * FROM productos WHERE codigo_barras = ?",
+      [codigoBarras]
+    );
+  },
 };

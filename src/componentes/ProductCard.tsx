@@ -6,6 +6,7 @@ interface ProductProps {
   precio: number;
   stock: number;
   codigo: string;
+  codigo_barras: string;
 }
 interface ProductCardProps {
   producto: ProductProps;
@@ -25,6 +26,9 @@ export const ProductCard = ({
         <Text>Codigo: {producto.codigo}</Text>
         <Text>Cantidad: {producto.stock}</Text>
         <Text>Precio: {producto.precio}</Text>
+        {producto.codigo_barras && (
+          <Text>Código de Barras: {producto.codigo_barras}</Text>
+        )}
       </View>
       <View style={styles.actions}>
         <TouchableOpacity onPress={() => onEdit(producto.id)}>

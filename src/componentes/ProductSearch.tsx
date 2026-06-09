@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -10,6 +11,8 @@ import {
 import { ProductRepository } from "../database/repositories/productRepository";
 import { Product } from "../app/movimientos/crear";
 import { useCartStore } from "../store/cartStore";
+import { router } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function ProductSearch() {
   const [query, setQuery] = useState("");
@@ -35,12 +38,27 @@ export default function ProductSearch() {
   };
   return (
     <View style={styles.container}>
-      <TextInput
-        placeholder="Buscar Producto por codigo o nombre"
-        style={styles.input}
-        onChangeText={(text) => handleSearch(text)}
-        value={query}
-      />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <TextInput
+          placeholder="Buscar Producto por codigo o nombre"
+          style={styles.input}
+          onChangeText={(text) => handleSearch(text)}
+          value={query}
+        />
+        <Pressable
+          style={styles.scanButton}
+          onPress={() => router.navigate("/pos/scanner")}
+        >
+          <Ionicons name="scan" size={24} color="white" />
+          <Text style={styles.scanButtonText}>Scan</Text>
+        </Pressable>
+      </View>
       {result.length > 0 && (
         <FlatList
           style={styles.list}
@@ -62,7 +80,7 @@ export default function ProductSearch() {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   input: {
     borderWidth: 1,
@@ -82,5 +100,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
+  },
+  scanButton: {
+    backgroundColor: "#0ab546",
+    padding: 10,
+    marginRight: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  scanButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
