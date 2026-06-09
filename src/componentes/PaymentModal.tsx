@@ -8,7 +8,13 @@ import {
   View,
   ScrollView,
 } from "react-native";
-import { useCartStore, PaymentMethod, PaymentType, PAYMENT_TYPES, PAYMENT_CONFIG } from "../store/cartStore";
+import {
+  useCartStore,
+  PaymentMethod,
+  PaymentType,
+  PAYMENT_TYPES,
+  PAYMENT_CONFIG,
+} from "../store/cartStore";
 import CustomButton from "./CustomButton";
 import { useEffect, useRef, useState } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
@@ -40,7 +46,9 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
   const pendiente = total - subtotal;
   const completado = subtotal >= total;
   const pagoCompletado = totalPagado >= total && currentValue === 0;
-  const esSoloEfectivo = committed.every(c => c.type === "efectivo") && (!selectedType || selectedType === "efectivo");
+  const esSoloEfectivo =
+    committed.every((c) => c.type === "efectivo") &&
+    (!selectedType || selectedType === "efectivo");
 
   const isTypeCommitted = (type: string) =>
     committed.some((c) => c.type === type);
@@ -52,14 +60,22 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
     const amt = parseFloat(inputAmount);
     if (!selectedType) return false;
     if (!amt || amt <= 0) {
-      Alert.alert("Error", `Ingrese un monto válido mayor a 0 para ${PAYMENT_CONFIG[selectedType].label}`);
+      Alert.alert(
+        "Error",
+        `Ingrese un monto válido mayor a 0 para ${PAYMENT_CONFIG[selectedType].label}`
+      );
       return false;
     }
     if (isTypeCommitted(selectedType)) {
-      Alert.alert("Método ya usado", `Ya registró un pago con ${PAYMENT_CONFIG[selectedType].label}. Quite el pago si desea cambiarlo.`);
+      Alert.alert(
+        "Método ya usado",
+        `Ya registró un pago con ${PAYMENT_CONFIG[selectedType].label}. Quite el pago si desea cambiarlo.`
+      );
       return false;
     }
-    const soloEfectivo = committed.every(c => c.type === "efectivo") && selectedType === "efectivo";
+    const soloEfectivo =
+      committed.every((c) => c.type === "efectivo") &&
+      selectedType === "efectivo";
     if (!soloEfectivo && totalPagado + amt > total) {
       Alert.alert("Error", "No puede exceder el monto a pagar");
       return false;
@@ -71,11 +87,17 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
 
   const handleTypePress = (type: PaymentType) => {
     if (isTypeBlocked(type)) {
-      Alert.alert("Pago completado", `El total de C$${total.toFixed(2)} ya fue cubierto. Si desea agregar más, quite un pago primero.`);
+      Alert.alert(
+        "Pago completado",
+        `El total de C$${total.toFixed(2)} ya fue cubierto. Si desea agregar más, quite un pago primero.`
+      );
       return;
     }
     if (isTypeCommitted(type) && type !== selectedType) {
-      Alert.alert("Método ya usado", `Ya pagó con ${PAYMENT_CONFIG[type].label}. Quite el pago si desea cambiarlo.`);
+      Alert.alert(
+        "Método ya usado",
+        `Ya pagó con ${PAYMENT_CONFIG[type].label}. Quite el pago si desea cambiarlo.`
+      );
       return;
     }
     if (type === selectedType) {
@@ -168,7 +190,9 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
           {completado && currentValue === 0 ? " ✓" : ""}
         </Text>
         {!completado && (
-          <Text style={styles.pendingText}>Pendiente: C${pendiente.toFixed(2)}</Text>
+          <Text style={styles.pendingText}>
+            Pendiente: C${pendiente.toFixed(2)}
+          </Text>
         )}
 
         <View style={styles.calculatorBox}>
@@ -207,8 +231,15 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
                 <FontAwesome5
                   name={cfg.icon}
                   size={22}
-                  color={isSelected ? "#fff" : isUsed ? "#4A90D9" : isBlocked ? "#ccc" : 
-                    "#666"}
+                  color={
+                    isSelected
+                      ? "#fff"
+                      : isUsed
+                        ? "#4A90D9"
+                        : isBlocked
+                          ? "#ccc"
+                          : "#666"
+                  }
                 />
                 <Text
                   style={[
@@ -223,9 +254,7 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
                 {isUsed && !isSelected && (
                   <Text style={styles.usedBadge}>✓</Text>
                 )}
-                {isBlocked && (
-                  <Text style={styles.blockedBadge}>🔒</Text>              
-                )}
+                {isBlocked && <Text style={styles.blockedBadge}>🔒</Text>}
               </Pressable>
             );
           })}
@@ -241,9 +270,15 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
                   <View key={i} style={styles.paymentRow}>
                     <FontAwesome5 name={cfg.icon} size={14} color="#4A90D9" />
                     <Text style={styles.paymentMethod}>{cfg.label}</Text>
-                    <Text style={styles.paymentAmount}>C${c.amount.toFixed(2)}</Text>
+                    <Text style={styles.paymentAmount}>
+                      C${c.amount.toFixed(2)}
+                    </Text>
                     <Pressable onPress={() => removePayment(i)} hitSlop={8}>
-                      <FontAwesome5 name="times-circle" size={18} color="#e74c3c" />
+                      <FontAwesome5
+                        name="times-circle"
+                        size={18}
+                        color="#e74c3c"
+                      />
                     </Pressable>
                   </View>
                 );
@@ -252,13 +287,15 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
           </View>
         )}
 
-          {esSoloEfectivo && subtotal > total && (
+        {esSoloEfectivo && subtotal > total && (
           <Text style={styles.cambioText}>
             Cambio: C${(subtotal - total).toFixed(2)}
           </Text>
         )}
-    {!esSoloEfectivo && subtotal > total && (
-          <Text style={styles.warningText}>No puede exceder el monto a pagar</Text>
+        {!esSoloEfectivo && subtotal > total && (
+          <Text style={styles.warningText}>
+            No puede exceder el monto a pagar
+          </Text>
         )}
 
         <CustomButton

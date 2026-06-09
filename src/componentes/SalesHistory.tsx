@@ -120,7 +120,12 @@ export default function SalesHistory() {
       type: mp.metodo_pago as PaymentType,
       amount: mp.monto,
     }));
-    setSelectedPrintData({ items: listaProductsSaled, payments, total, numSale: id });
+    setSelectedPrintData({
+      items: listaProductsSaled,
+      payments,
+      total,
+      numSale: id,
+    });
     setShowPrintModal(true);
   };
 

@@ -58,7 +58,9 @@ export default function SalesCard({
             >
               <FontAwesome5 name={iconName} size={16} color="black" />
               <Text>
-                {mp.metodo_pago.charAt(0).toUpperCase() + mp.metodo_pago.slice(1)}: C$
+                {mp.metodo_pago.charAt(0).toUpperCase() +
+                  mp.metodo_pago.slice(1)}
+                : C$
                 {mp.monto.toFixed(2)}
               </Text>
             </View>
@@ -79,11 +81,7 @@ export default function SalesCard({
             <Text style={{ fontSize: 15, fontWeight: "bold" }}>Imprimir</Text>
             <Pressable
               onPress={() =>
-                printVoucher(
-                  item.id,
-                  item.metodos_pago,
-                  item.total
-                )
+                printVoucher(item.id, item.metodos_pago, item.total)
               }
             >
               <FontAwesome5 name="print" size={24} color="black" />

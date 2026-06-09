@@ -14,7 +14,10 @@ export const PAYMENT_TYPES: PaymentType[] = [
   "transferencia",
 ];
 
-export const PAYMENT_CONFIG: Record<PaymentType, { icon: string; label: string }> = {
+export const PAYMENT_CONFIG: Record<
+  PaymentType,
+  { icon: string; label: string }
+> = {
   efectivo: { icon: "money-bill", label: "Efectivo" },
   tarjeta: { icon: "credit-card", label: "Tarjeta" },
   transferencia: { icon: "money-check-alt", label: "Transferencia" },
@@ -63,13 +66,13 @@ export const useCartStore = create<CartState>((set, get) => ({
   updateQuantity: (productId, quantity) => {
     const { items, calcularTotal } = get();
     if (quantity <= 0) {
-      const updatedItems = items.filter((item) => item.product.id !== productId);
+      const updatedItems = items.filter(
+        (item) => item.product.id !== productId
+      );
       set({ items: updatedItems });
     } else {
       const updatedItems = items.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity }
-          : item
+        item.product.id === productId ? { ...item, quantity } : item
       );
       set({ items: updatedItems });
     }

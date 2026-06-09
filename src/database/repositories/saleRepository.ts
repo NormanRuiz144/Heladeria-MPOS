@@ -3,9 +3,7 @@ import { db } from "../database";
 export const SaleRepository = {
   async getAll() {
     const database = await db;
-    return database.getAllAsync(
-      "SELECT * FROM ventas ORDER BY fecha DESC"
-    );
+    return database.getAllAsync("SELECT * FROM ventas ORDER BY fecha DESC");
   },
   async create(total: number, montoPagado: number, cambio: number) {
     return (await db).runAsync(
@@ -25,7 +23,7 @@ export const SaleRepository = {
     const database = await db;
     const start = `${startDate} 00:00:00`;
     const end = `${endDate} 23:59:59`;
-    
+
     return database.getAllAsync(
       "SELECT * FROM ventas WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC",
       [start, end]
