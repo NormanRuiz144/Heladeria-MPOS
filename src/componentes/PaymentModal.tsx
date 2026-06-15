@@ -18,6 +18,8 @@ import {
 import CustomButton from "./CustomButton";
 import { useEffect, useRef, useState } from "react";
 import { FontAwesome5 } from "@expo/vector-icons";
+import InputField from "../app/productos/InputField";
+import ClienteSearch from "./ClienteSearch";
 
 interface PaymentModalProps {
   visible: boolean;
@@ -169,10 +171,10 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
 
   return (
     <Modal visible={visible} animationType="slide">
-      <Pressable style={styles.buttonBack} onPress={onClose}>
-        <FontAwesome5 name="arrow-circle-left" size={24} color="black" />
-      </Pressable>
-      <View style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+        <Pressable style={styles.buttonBack} onPress={onClose}>
+          <FontAwesome5 name="arrow-circle-left" size={24} color="black" />
+        </Pressable>
         <Text style={styles.amount}>C${total.toFixed(2)}</Text>
         <View style={styles.progressBar}>
           <View
@@ -200,7 +202,6 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
             {buildFormula()}
           </Text>
         </View>
-
         <TextInput
           ref={inputRef}
           style={styles.input}
@@ -298,12 +299,15 @@ export default function PaymentModal({ visible, onClose }: PaymentModalProps) {
           </Text>
         )}
 
+        {/* ZONA PAL CLIENTE */}
+        <ClienteSearch />
+
         <CustomButton
           title={canProcessAll() ? "Procesar Venta" : "Complete el pago"}
           onPress={handleProcess}
           disable={!canProcessAll()}
         />
-      </View>
+      </ScrollView>
     </Modal>
   );
 }
@@ -312,8 +316,10 @@ const styles = StyleSheet.create({
   buttonBack: {
     padding: 10,
   },
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  container: {
     padding: 20,
     gap: 10,
   },

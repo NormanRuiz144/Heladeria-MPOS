@@ -12,9 +12,17 @@ export const runMigrations = async () => {
       codigo TEXT,
       create_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
-
+      
+      CREATE TABLE IF NOT EXISTS clientes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL,
+      ruc TEXT UNIQUE,
+      telefono TEXT NULL
+      );
+      
       CREATE TABLE IF NOT EXISTS ventas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_cliente INTEGER,
       total REAL,
       fecha TEXT DEFAULT CURRENT_TIMESTAMP,
       monto_pagado REAL,
@@ -49,9 +57,16 @@ export const runMigrations = async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,      
       impuesto REAL NOT NULL
       );
-
+      
+      -- Alteraciones de columnas
       --ALTER TABLE productos ADD COLUMN codigo_barras TEXT;
-      CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo_barras);
+      --ALTER TABLE ventas ADD COLUMN id_cliente INTEGER;
+      --ALTER TABLE ventas DROP COLUMN id_cliente INTEGER;
+      --DROP TABLE IF EXISTS clientes;
+
+      -- Crear indices para mejorar el rendimiento de las consultas
+      -- CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo_barras);
+      -- CREATE INDEX IF NOT EXISTS idx_clientes_ruc ON clientes(ruc);
     `);
 
     const database = await db;
@@ -83,6 +98,14 @@ export const runMigrations = async () => {
     try {
       await database.runAsync("ALTER TABLE ventas DROP COLUMN metodo_pago");
     } catch {}
+    // try {
+    //   await database.runAsync("ALTER TABLE clientes ADD COLUMN ruc TEXT");
+    // } catch {}
+    // try {
+    //   await database.runAsync(
+    //     "CREATE INDEX IF NOT EXISTS idx_clientes_ruc ON clientes(ruc)"
+    //   );
+    // } catch {}
   } catch (error) {
     console.log("Migration error:", error);
   }

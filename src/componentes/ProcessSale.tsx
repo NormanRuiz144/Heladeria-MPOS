@@ -17,6 +17,7 @@ export default function ProcessSale() {
   const total = useCartStore((state) => state.total);
   const clearCart = useCartStore((state) => state.clearCart);
   const payments = useCartStore((state) => state.payments);
+  const clientId = useCartStore((state) => state.clientId);
   const isProcessing = useRef(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
@@ -72,7 +73,8 @@ export default function ProcessSale() {
           const resultsale = await SaleRepository.create(
             total,
             montoPagado,
-            cambio
+            cambio,
+            clientId
           );
 
           for (const payment of payments) {

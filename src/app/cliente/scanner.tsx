@@ -3,21 +3,18 @@ import { StyleSheet, Text, View, Alert, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, useLocalSearchParams } from "expo-router";
-import { ProductRepository } from "../../database/repositories/productRepository";
 import {
   Cliente,
   clientesRepository,
 } from "../../database/repositories/clientesRepository";
-import { Product } from "../movimientos/crear";
 import { useCartStore } from "../../store/cartStore";
 
 const { width } = Dimensions.get("window");
 
-const Scanner = () => {
+const ScannerClient = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const setClientId = useCartStore((state) => state.setClientId);
-  const addItem = useCartStore((state) => state.addItem);
   const params = useLocalSearchParams();
   const modo = params?.modo || "scan";
 
@@ -67,46 +64,46 @@ const Scanner = () => {
     setIsProcessing(true);
 
     console.log(`Código detectado - Tipo: ${type} | Datos: ${data}`);
-    if (modo == "scan") {
+    if (modo === "scan") {
       try {
-        const productoEncontrado =
-          (await ProductRepository.searchByCodigoBarras(data)) as Product;
+        let ruc = data.split("<");
 
-        if (productoEncontrado) {
-          console.log(`Descripcion del producto: ${productoEncontrado.nombre}`);
-          addItem(productoEncontrado);
-          Alert.alert("Producto Agregado", `Código: ${data}`);
+        const cliente = (await clientesRepository.getByRuc(ruc[1])) as Cliente;
+        if (cliente) {
+          setClientId(cliente.id);
+          // Alert.alert("Cliente seleccionado", `Cliente: ${cliente.nombre}`);
+          router.back();
         } else {
-          Alert.alert(
-            "Error",
-            `El producto con código ${data} no está registrado.`
-          );
+          Alert.alert("Error", `No se encontró un cliente con RUC: ${data}`);
         }
       } catch (error) {
-        console.error("Error al buscar en SQLite:", error);
+        console.error("Error al buscar cliente por QR:", error);
+        Alert.alert("Error", "Error al buscar el cliente.");
       } finally {
         setTimeout(() => {
           setIsProcessing(false);
         }, 1500);
       }
-    } else {
-      const productoEncontrado = (await ProductRepository.searchByCodigoBarras(
-        data
-      )) as Product;
-      if (!productoEncontrado) {
+    } else if (modo == "asignar") {
+      let ruc = data.split("<");
+      const clienteEncontrado = (await clientesRepository.getByRuc(
+        ruc[0]
+      )) as Cliente;
+      if (!clienteEncontrado) {
         Alert.alert(
           "El codigo de barras del Producto a insertar es:",
-          `Código: ${data}`
+          `Código: ${ruc[1]}`
         );
         router.dismissTo({
-          pathname: "/productos/crear",
-          params: { data: data },
+          pathname: "/cliente/crear",
+          params: { data: ruc[1] },
         });
+      } else {
+        Alert.alert(
+          "ya exites un cliente con:",
+          `Nombre: ${clienteEncontrado.nombre} Nuemero de cedula: ${clienteEncontrado.ruc}`
+        );
       }
-      Alert.alert(
-        "El codigo de barras ya esta asociado a un Producto es:",
-        `Nombre: ${productoEncontrado.nombre} Codigo: ${productoEncontrado.codigo}`
-      );
     }
   };
 
@@ -124,7 +121,7 @@ const Scanner = () => {
         facing="back"
         // Limitamos los tipos para mejorar el rendimiento de la CPU
         barcodeScannerSettings={{
-          barcodeTypes: ["ean13", "code128", "upc_a", "qr"],
+          barcodeTypes: ["qr"],
         }}
         onBarcodeScanned={isProcessing ? undefined : handleBarcodeScanned}
       >
@@ -154,7 +151,7 @@ const Scanner = () => {
   );
 };
 
-export default Scanner;
+export default ScannerClient;
 
 const styles = StyleSheet.create({
   container: {
@@ -208,15 +205,15 @@ const styles = StyleSheet.create({
   },
   focusedContainer: {
     flexDirection: "row",
-    height: 200,
+    height: 250,
   },
   unfocusedContainerSide: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
   },
   targetScanner: {
-    width: width * 0.8,
-    height: 200,
+    width: width * 0.6,
+    height: 250,
     borderWidth: 2,
     borderColor: "#00FF00",
     backgroundColor: "transparent",

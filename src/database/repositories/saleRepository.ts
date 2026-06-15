@@ -5,10 +5,15 @@ export const SaleRepository = {
     const database = await db;
     return database.getAllAsync("SELECT * FROM ventas ORDER BY fecha DESC");
   },
-  async create(total: number, montoPagado: number, cambio: number) {
+  async create(
+    total: number,
+    montoPagado: number,
+    cambio: number,
+    id_cliente?: number | null
+  ) {
     return (await db).runAsync(
-      "INSERT INTO ventas (total, monto_pagado, cambio) VALUES (?, ?, ?)",
-      [total, montoPagado, cambio]
+      "INSERT INTO ventas (total, monto_pagado, cambio, id_cliente) VALUES (?, ?, ?, ?)",
+      [total, montoPagado, cambio, id_cliente ?? null]
     );
   },
 

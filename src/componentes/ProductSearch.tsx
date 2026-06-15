@@ -53,7 +53,7 @@ export default function ProductSearch() {
         />
         <Pressable
           style={styles.scanButton}
-          onPress={() => router.navigate("/pos/scanner")}
+          onPress={() => router.navigate("/pos/scanner?modo=scan")}
         >
           <Ionicons name="scan" size={24} color="white" />
           <Text style={styles.scanButtonText}>Scan</Text>

@@ -32,7 +32,9 @@ interface CartState {
   items: CartItem[];
   total: number;
   payments: PaymentMethod[];
+  clientId: number | null;
   setPayments: (payments: PaymentMethod[]) => void;
+  setClientId: (id: number | null) => void;
   addItem: (product: Product) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -44,6 +46,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   total: 0,
   payments: [],
+  clientId: null,
+  setClientId: (id) => set({ clientId: id }),
   addItem: (product, quantity = 1) => {
     const { items, calcularTotal } = get();
     const exists = items.some((item) => item.product.id === product.id);
@@ -88,6 +92,6 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ total: totalCalculado });
   },
   clearCart: () => {
-    set({ items: [], total: 0, payments: [] });
+    set({ items: [], total: 0, payments: [], clientId: null });
   },
 }));

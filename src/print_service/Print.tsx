@@ -3,14 +3,14 @@ import { shareAsync, isAvailableAsync } from "expo-sharing";
 import { CartItem } from "../store/cartStore";
 import { PaymentMethod } from "../store/cartStore";
 import { Alert } from "react-native";
-import { empresaRepository } from "../database/repositories/empresaRepository";
+import { Cliente } from "../database/repositories/clientesRepository";
 
 export const PrintTicket = async (
   items: CartItem[],
   payments: PaymentMethod[],
   total: number,
   numSale: number,
-  aplicarImp?: boolean
+  clienteInfo: Cliente
 ) => {
   try {
     let productFormat: string = "";
@@ -23,14 +23,6 @@ export const PrintTicket = async (
         </div>
       `;
     }
-
-    let impuesto;
-    // if (aplicarImp) {
-    impuesto = (await empresaRepository.getById(1)) as any;
-    console.log(impuesto.impuesto);
-    // console.log(aplicarImp);
-    // }
-    let totalImpuesto = total * impuesto.impuesto;
 
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
     const soloEfectivo = payments.every((p) => p.type === "efectivo");
@@ -77,7 +69,8 @@ export const PrintTicket = async (
     </head>
     <body>
         <div class="header">
-        <h1>MBPos Venta #${numSale}</h1>        
+        <h1>MBPos Venta #${numSale}</h1>  
+        <span>Nombre del Cliente: ${clienteInfo.nombre}</span>      
         </div>
         <div class="divider"></div>
         ${productFormat}
@@ -87,7 +80,7 @@ export const PrintTicket = async (
           ${paymentsFormat}
           <div class="summary-total">
             <span>TOTAL</span>
-            <span>C$ ${total + totalImpuesto}</span>
+            <span>C$ ${total.toFixed(2)}</span>
             
           </div>
           ${cambio > 0 ? `<div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;"><span>CAMBIO</span><span>C$ ${cambio.toFixed(2)}</span></div>` : ``}
@@ -112,7 +105,8 @@ export const PrintInvoice = async (
   items: CartItem[],
   payments: PaymentMethod[],
   total: number,
-  numSale: number
+  numSale: number,
+  clienteInfo: Cliente
 ) => {
   try {
     let productRows = "";
@@ -221,8 +215,8 @@ export const PrintInvoice = async (
             </div>
             <div>
                 <h3>Cliente</h3>
-                <p><strong>Consumidor Final</strong></p>
-            </div>
+                <p><strong>${clienteInfo.nombre}</strong></p>
+              </div>
         </div>
 
         <table>

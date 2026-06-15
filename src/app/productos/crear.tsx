@@ -3,8 +3,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
 import { useEffect, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import BarcodeGenerator from "../../componentes/showBarCode";
+import { Pressable } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Product } from "../movimientos/crear";
 
 export default function CrearProductos() {
   const [nombre, setNombre] = useState("");
@@ -12,16 +16,28 @@ export default function CrearProductos() {
   const [stock, setStock] = useState("");
   const [codigo, setCodigo] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("0");
+  const params = useLocalSearchParams();
 
-  const generarCodigoBarras = () => {
+  // 2. Escuchamos cuándo cambian los parámetros de la ruta (cuando el escáner regresa)
+  useEffect(() => {
+    if (params?.data) {
+      setCodigoBarras(params.data as string);
+    }
+  }, [params?.data]);
+
+  const generarCodigoBarras = (modo: string = "auto") => {
     // Genera un código de barras único basado en el timestamp y un número aleatorio
-
-    setCodigoBarras((Math.random() * 1000000000).toFixed());
+    if (modo == "auto") {
+      setCodigoBarras((Math.random() * 1000000000).toFixed());
+      return;
+    } else {
+      router.navigate("/pos/scanner?modo=asig");
+    }
   };
 
-  useEffect(() => {
-    generarCodigoBarras();
-  }, []);
+  // useEffect(() => {
+  //   generarCodigoBarras();
+  // }, []);
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -57,6 +73,16 @@ export default function CrearProductos() {
       const isUnique = await ProductRepository.isCodigoUnique(codigo);
       if (!isUnique) {
         Alert.alert("Error", "El codigo ya existe.");
+        return;
+      }
+      const isUniqueBarCode = (await ProductRepository.searchByCodigoBarras(
+        codigoBarras
+      )) as Product;
+      if (isUniqueBarCode) {
+        Alert.alert(
+          "Error",
+          "El codigo de barras ya esta asociado con un producto."
+        );
         return;
       }
       await ProductRepository.create(
@@ -95,7 +121,25 @@ export default function CrearProductos() {
         <Text style={{ fontWeight: "bold", fontSize: 16 }}>
           Código de Barras generado para el producto:
         </Text>
-        <BarcodeGenerator value={codigoBarras} showText={true} />
+        <View style={styles.barcodeButtons}>
+          <Pressable
+            style={styles.scanButton}
+            onPress={() => generarCodigoBarras("scan")}
+          >
+            <Ionicons name="scan" size={24} color="white" />
+            <Text style={styles.scanButtonText}>Scan</Text>
+          </Pressable>
+          <Pressable
+            style={styles.scanButton}
+            onPress={() => generarCodigoBarras()}
+          >
+            <FontAwesome name="gear" size={24} color="white" />
+            <Text style={styles.scanButtonText}>Auto</Text>
+          </Pressable>
+        </View>
+        {codigoBarras != "0" && (
+          <BarcodeGenerator value={codigoBarras} showText={true} />
+        )}
       </View>
       <Button title="Guardar" onPress={guardar} />
     </SafeAreaView>
@@ -116,5 +160,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
     paddingBottom: 10,
+  },
+  barcodeButtons: {
+    flexDirection: "row",
+    marginTop: 10,
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  scanButton: {
+    backgroundColor: "#0ab546",
+    padding: 10,
+    marginRight: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  scanButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
