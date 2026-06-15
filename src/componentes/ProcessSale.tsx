@@ -11,6 +11,10 @@ import { SaleRepository } from "../database/repositories/saleRepository";
 import { SaleDetailRepository } from "../database/repositories/saleDetailRepository";
 import { PrintTicket, PrintInvoice } from "../print_service/Print";
 import PrintOptionsModal from "./PrintOptionsModal";
+import {
+  Cliente,
+  clientesRepository,
+} from "../database/repositories/clientesRepository";
 
 export default function ProcessSale() {
   const items = useCartStore((state) => state.items);
@@ -23,10 +27,7 @@ export default function ProcessSale() {
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
 
-  const handlePrintSelect = async (
-    option: "ticket" | "invoice",
-    aplicarImp?: boolean
-  ) => {
+  const handlePrintSelect = async (option: "ticket" | "invoice") => {
     setShowPrintModal(false);
     if (saleData) {
       if (option === "ticket") {
@@ -35,14 +36,15 @@ export default function ProcessSale() {
           saleData.payments,
           saleData.total,
           saleData.numSale,
-          aplicarImp
+          saleData.cliente
         );
       } else {
         await PrintInvoice(
           saleData.items,
           saleData.payments,
           saleData.total,
-          saleData.numSale
+          saleData.numSale,
+          saleData.cliente
         );
       }
       setSaleData(null);
@@ -106,6 +108,11 @@ export default function ProcessSale() {
             );
           }
 
+          const clienteInfo =
+            clientId !== null
+              ? ((await clientesRepository.getById(clientId)) as Cliente)
+              : { id: 0, nombre: "Cliente de normal", numero: "", ruc: "" };
+
           await database.execAsync("COMMIT");
 
           setShowPayment(false);
@@ -115,6 +122,7 @@ export default function ProcessSale() {
             cambio,
             total,
             numSale: resultsale.lastInsertRowId,
+            cliente: clienteInfo,
           });
           setShowPrintModal(true);
           clearCart();
