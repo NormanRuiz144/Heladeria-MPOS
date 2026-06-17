@@ -2,6 +2,7 @@ import {
   Alert,
   Button,
   Image,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -144,7 +145,8 @@ export default function editarProducto() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Editar Producto</Text>
+      <ScrollView>
+        <Text style={styles.title}>Editar Producto</Text>
       <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
       <InputField placeholder="Información" value={info_relevante} onChangeText={setInfo_relevante} />
       <InputField placeholder="Codigo" value={codigo} onChangeText={setCodigo} />
@@ -191,6 +193,7 @@ export default function editarProducto() {
       <TouchableOpacity style={styles.buttonImaje} onPress={editar}>
         <Text style={styles.buttonText}>Guardar Cambios</Text>
       </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }

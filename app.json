@@ -43,7 +43,7 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
-      ]
+      ],
       "expo-sqlite",
       [
         "expo-image-picker",
@@ -54,4 +54,3 @@
     ]
   }
 }
-

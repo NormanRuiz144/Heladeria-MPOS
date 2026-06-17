@@ -3,6 +3,7 @@ import {
   Button,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -145,7 +146,8 @@ export default function CrearProductos() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Nuevo Producto</Text>
+      <ScrollView>
+        <Text style={styles.title}>Nuevo Producto</Text>
       <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
       <InputField placeholder="Información" value={info_relevante} onChangeText={setInfo_relevante} />
       <InputField placeholder="Codigo" value={codigo} onChangeText={setCodigo} />
@@ -200,6 +202,7 @@ export default function CrearProductos() {
       <TouchableOpacity style={styles.buttonImaje} onPress={guardar}>
         <Text style={styles.buttonText}>Guardar</Text>
       </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }

@@ -19,6 +19,14 @@ export const CategoriaRepository = {
   },
 
   /**
+   * Actualiza el nombre de una categoría.
+   */
+  async update(id: number, nombre: string) {
+    const database = await db;
+    return database.runAsync("UPDATE categorias SET nombre = ? WHERE id = ?", [nombre, id]);
+  },
+
+  /**
    * Elimina una categoría por su ID.
    */
   async delete(id: number) {
