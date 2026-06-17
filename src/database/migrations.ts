@@ -3,6 +3,11 @@ import { db } from "./database";
 export const runMigrations = async () => {
   try {
     (await db).execAsync(`
+            CREATE TABLE IF NOT EXISTS categorias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL UNIQUE
+      );
+
       CREATE TABLE IF NOT EXISTS productos (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL,
@@ -10,7 +15,9 @@ export const runMigrations = async () => {
       precio REAL NOT NULL,
       stock INTEGER DEFAULT 0,
       codigo TEXT,
-      create_at TEXT DEFAULT CURRENT_TIMESTAMP
+      create_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      categoria_id INTEGER DEFAULT 1,
+      FOREIGN KEY (categoria_id) REFERENCES categorias(id)
       );
       
       CREATE TABLE IF NOT EXISTS clientes (
@@ -26,7 +33,8 @@ export const runMigrations = async () => {
       total REAL,
       fecha TEXT DEFAULT CURRENT_TIMESTAMP,
       monto_pagado REAL,
-      cambio REAL
+      cambio REAL,
+        estado BOOLEAN DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS detalle_ventas (
@@ -43,7 +51,9 @@ export const runMigrations = async () => {
       descripcion TEXT,
       tipo TEXT,
       cantidad INTEGER,
-      fecha TEXT DEFAULT CURRENT_TIMESTAMP
+      fecha TEXT DEFAULT CURRENT_TIMESTAMP,
+        estado BOOLEAN DEFAULT false,
+        id_venta INTEGER DEFAULT NULL
       );
 
       CREATE TABLE IF NOT EXISTS metodo_pago (
@@ -57,12 +67,21 @@ export const runMigrations = async () => {
       id INTEGER PRIMARY KEY AUTOINCREMENT,      
       impuesto REAL NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS ventas_varias (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        descripcion TEXT NOT NULL,
+        motivo TEXT NOT NULL,
+        monto REAL NOT NULL,
+        fecha TEXT DEFAULT CURRENT_TIMESTAMP
+      );
       
       -- Alteraciones de columnas
       --ALTER TABLE productos ADD COLUMN codigo_barras TEXT;
       --ALTER TABLE ventas ADD COLUMN id_cliente INTEGER;
       --ALTER TABLE ventas DROP COLUMN id_cliente INTEGER;
       --DROP TABLE IF EXISTS clientes;
+      --ALTER TABLE productos ADD COLUMN categoria_id INTEGER DEFAULT 1
 
       -- Crear indices para mejorar el rendimiento de las consultas
       -- CREATE INDEX IF NOT EXISTS idx_productos_codigo ON productos(codigo_barras);
@@ -94,18 +113,19 @@ export const runMigrations = async () => {
         AND id NOT IN (SELECT DISTINCT id_venta FROM metodo_pago)
       `);
     } catch {}
-
+    try {
+      await database.runAsync(
+        "INSERT OR IGNORE INTO categorias (nombre) VALUES ('General'), ('Bebidas'), ('Helados')"
+      );
+      await database.runAsync(
+        "ALTER TABLE productos ADD COLUMN categoria_id INTEGER DEFAULT 1"
+      );
+    } catch (e) {
+      // Si falla es porque la columna ya existe, lo cual está bien
+    }
     try {
       await database.runAsync("ALTER TABLE ventas DROP COLUMN metodo_pago");
     } catch {}
-    // try {
-    //   await database.runAsync("ALTER TABLE clientes ADD COLUMN ruc TEXT");
-    // } catch {}
-    // try {
-    //   await database.runAsync(
-    //     "CREATE INDEX IF NOT EXISTS idx_clientes_ruc ON clientes(ruc)"
-    //   );
-    // } catch {}
   } catch (error) {
     console.log("Migration error:", error);
   }

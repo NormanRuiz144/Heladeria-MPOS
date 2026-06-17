@@ -280,7 +280,7 @@ export const PrintInvoice = async (
 };
 
 export const PrintSalesReport = async (
-  sales: any[],
+  sales: any[], // Esta lista ahora contiene objetos combinados con la propiedad 'tipo'
   totalPeriodo: number,
   startDate: string,
   endDate: string
@@ -288,17 +288,30 @@ export const PrintSalesReport = async (
   try {
     // Generamos las filas de la tabla de ventas
     let rowsFormat = "";
-    sales.forEach((sale) => {
-      rowsFormat += `
-        <tr>
-          <td>#${sale.id}</td>
-          <td>${sale.fecha.split(" ")[0]}</td>
-          <td>${sale.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
-          <td style="color: ${sale.estado ? "red" : "black"}">
-            ${sale.estado ? "ANULADA" : "C$ " + sale.total.toFixed(2)}
-          </td>
-        </tr>
-      `;
+    sales.forEach((item) => {
+      if (item.tipo === "venta") {
+        // Formato para ventas normales
+        rowsFormat += `
+          <tr>
+            <td>#${item.id}</td>
+            <td>${item.fecha.split(" ")[0]}</td>
+            <td>${item.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
+            <td style="color: ${item.estado ? "red" : "black"}">
+              ${item.estado ? "ANULADA" : "C$ " + item.total.toFixed(2)}
+            </td>
+          </tr>
+        `;
+      } else {
+        // Formato para ventas extras
+        rowsFormat += `
+          <tr style="background-color: #fff9f0;">
+            <td>EXTRA</td>
+            <td>${item.fecha.split(" ")[0]}</td>
+            <td>${item.descripcion} (${item.motivo})</td>
+            <td>C$ ${item.monto.toFixed(2)}</td>
+          </tr>
+        `;
+      }
     });
 
     const reportHtml = `
@@ -313,17 +326,14 @@ export const PrintSalesReport = async (
         th { background-color: #0ab546; color: white; padding: 10px; text-align: left; }
         td { border-bottom: 1px solid #ddd; padding: 10px; font-size: 12px; }
         .total-section { margin-top: 30px; text-align: right; }
-        /* Dentro del string reportHtml en Print.ts */
-        .total-box {    display: inline-block;   background: #1a1a1a;   color: white;   padding: 15px 40px; /* Más espacio a los lados */
-        border-radius: 50px; /* Redondeado total (estilo píldora) */
-       border: 2px solid #0ab546; /* Un borde verde para que resalte en el PDF */
-      text-align: center;}
+        .total-box { display: inline-block; background: #1a1a1a; color: white; padding: 15px 40px; 
+        border-radius: 50px; border: 2px solid #0ab546; text-align: center;}
         .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #888; }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="title">MBPos - REPORTE DE VENTAS</div>
+        <div class="title">MBPos - REPORTE DE VENTAS Y EXTRAS</div>
       </div>
       
       <div class="info">
@@ -334,9 +344,9 @@ export const PrintSalesReport = async (
       <table>
         <thead>
           <tr>
-            <th>Número Venta</th>
+            <th>ID / Tipo</th>
             <th>Fecha</th>
-            <th>Método</th>
+            <th>Detalle / Método</th>
             <th>Monto</th>
           </tr>
         </thead>
@@ -365,6 +375,6 @@ export const PrintSalesReport = async (
       await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
     }
   } catch (error) {
-    Alert.alert("Error", "No se pudo generar el reporte PDF");
+    Alert.alert("Error", "No se pudo generar el reporte PDF: " + error);
   }
 };

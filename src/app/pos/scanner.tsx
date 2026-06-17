@@ -4,10 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router, useLocalSearchParams } from "expo-router";
 import { ProductRepository } from "../../database/repositories/productRepository";
-import {
-  Cliente,
-  clientesRepository,
-} from "../../database/repositories/clientesRepository";
 import { Product } from "../movimientos/crear";
 import { useCartStore } from "../../store/cartStore";
 
@@ -16,7 +12,6 @@ const { width } = Dimensions.get("window");
 const Scanner = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [isProcessing, setIsProcessing] = useState(false);
-  const setClientId = useCartStore((state) => state.setClientId);
   const addItem = useCartStore((state) => state.addItem);
   const params = useLocalSearchParams();
   const modo = params?.modo || "scan";
@@ -102,11 +97,12 @@ const Scanner = () => {
           pathname: "/productos/crear",
           params: { data: data },
         });
+      } else {
+        Alert.alert(
+          "El codigo de barras ya esta asociado a un Producto es:",
+          `Nombre: ${productoEncontrado.nombre} Codigo: ${productoEncontrado.codigo}`
+        );
       }
-      Alert.alert(
-        "El codigo de barras ya esta asociado a un Producto es:",
-        `Nombre: ${productoEncontrado.nombre} Codigo: ${productoEncontrado.codigo}`
-      );
     }
   };
 
@@ -124,7 +120,7 @@ const Scanner = () => {
         facing="back"
         // Limitamos los tipos para mejorar el rendimiento de la CPU
         barcodeScannerSettings={{
-          barcodeTypes: ["ean13", "code128", "upc_a", "qr"],
+          barcodeTypes: ["ean13", "code128", "upc_a"],
         }}
         onBarcodeScanned={isProcessing ? undefined : handleBarcodeScanned}
       >

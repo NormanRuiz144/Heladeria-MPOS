@@ -96,12 +96,30 @@ export default function CrearProductos() {
         </Pressable>
       </View>
       <Button title="Guardar" onPress={guardar} />
-      {/* Mostar clientes */}
-      <Text>Lista de clientes:</Text>
+      <Text style={styles.subtitle}>Lista de clientes:</Text>
       <FlatList
         data={clienteList}
         keyExtractor={(item) => item.ruc}
-        renderItem={({ item }) => <Text>{item.nombre}</Text>}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.card}
+            onPress={() => {
+              setClientId(item.id);
+              router.back();
+            }}
+          >
+            <View style={styles.cardBody}>
+              <Text style={styles.cardName}>{item.nombre}</Text>
+              <Text style={styles.cardDetail}>RUC: {item.ruc}</Text>
+              {item.telefono ? (
+                <Text style={styles.cardDetail}>Tel: {item.telefono}</Text>
+              ) : null}
+            </View>
+            {/* <Ionicons name="chevron-forward" size={20} color="#999" /> */}
+          </Pressable>
+        )}
       />
     </SafeAreaView>
   );
@@ -116,6 +134,43 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
+    color: "#333",
+  },
+  listContainer: {
+    paddingBottom: 20,
+  },
+  card: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardBody: {
+    flex: 1,
+  },
+  cardName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 4,
+  },
+  cardDetail: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
   },
   rucZone: {
     alignItems: "center",

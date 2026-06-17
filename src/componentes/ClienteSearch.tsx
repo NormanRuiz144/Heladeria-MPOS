@@ -26,10 +26,8 @@ export default function ClienteSearch() {
 
   useEffect(() => {
     if (clientId && !selectedClient) {
-      clientesRepository.search(clientId.toString()).then((results) => {
-        console.log("Resultados búsqueda cliente por ID:", results);
-        const client = (results as Cliente[]).find((c) => c.id === clientId);
-        if (client) setSelectedClient(client);
+      clientesRepository.getById(clientId).then((results) => {
+        if (results) setSelectedClient(results as Cliente);
       });
     }
     if (!clientId) {

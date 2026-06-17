@@ -1,10 +1,19 @@
-import { Alert, Button, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Button,
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
 import { useEffect, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { router, useLocalSearchParams } from "expo-router";
 import BarcodeGenerator from "../../componentes/showBarCode";
+import { CategoriaRepository } from "../../database/repositories/categoriaRepository";
 
 interface Producto {
   id: number;
@@ -22,6 +31,10 @@ export default function editarProducto() {
   const [stock, setStock] = useState("");
   const [codigo, setCodigo] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("");
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<
+    number | null
+  >(null);
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -50,25 +63,29 @@ export default function editarProducto() {
   };
 
   useEffect(() => {
-    const loadProduct = async () => {
+    const loadData = async () => {
+      // 1. Cargamos categorías
+      const cats = await CategoriaRepository.getAll();
+      setCategorias(cats);
+
+      // 2. Cargamos el producto actual
       if (id) {
-        const product = (await ProductRepository.getById(
-          Number(id)
-        )) as Producto;
+        const product: any = await ProductRepository.getById(Number(id));
         if (product) {
           setNombre(product.nombre);
           setPrecio(product.precio.toString());
           setStock(product.stock.toString());
           setCodigo(product.codigo || "");
-          setCodigoBarras(product.codigo_barras || "");
+          setCategoriaSeleccionada(product.categoria_id); // Cargamos la categoría guardada
         }
       }
     };
-    loadProduct();
-  }, []);
+    loadData();
+  }, [id]);
 
   const editar = async () => {
-    if (!validar()) {
+    if (!nombre.trim() || !codigo.trim() || categoriaSeleccionada === null) {
+      Alert.alert("Error", "Todos los campos y la categoría son obligatorios.");
       return;
     }
 
@@ -87,7 +104,8 @@ export default function editarProducto() {
         nombre,
         Number(precio),
         Number(stock),
-        codigo
+        codigo,
+        categoriaSeleccionada
       );
       Alert.alert("Exito", "Producto actualizado exitosamente.");
     } catch (error) {
@@ -99,7 +117,7 @@ export default function editarProducto() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Nuevo Producto</Text>
+      <Text style={styles.title}>Editar Producto</Text>
       <InputField
         placeholder="Nombre"
         value={nombre}
@@ -122,7 +140,33 @@ export default function editarProducto() {
         </Text>
         <BarcodeGenerator value={codigoBarras} showText={true} />
       </View>
-      <Button title="Editar" onPress={editar} />
+
+      <Text style={styles.subtitle}>Categoría:</Text>
+      <FlatList
+        horizontal
+        data={categorias}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            onPress={() => setCategoriaSeleccionada(item.id)}
+            style={[
+              styles.chip,
+              categoriaSeleccionada === item.id && styles.chipActive,
+            ]}
+          >
+            <Text
+              style={
+                categoriaSeleccionada === item.id ? { color: "white" } : {}
+              }
+            >
+              {item.nombre}
+            </Text>
+          </TouchableOpacity>
+        )}
+        style={styles.chipList}
+      />
+
+      <Button title="Guardar Cambios" onPress={editar} color="#0ab546" />
     </SafeAreaView>
   );
 }
@@ -132,11 +176,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
+  title: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
+  subtitle: { fontSize: 16, fontWeight: "bold", marginVertical: 10 },
+  chip: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: "#eee",
+    marginRight: 10,
+    borderRadius: 20,
   },
+  chipActive: { backgroundColor: "#0ab546" },
+  chipList: { flexGrow: 0, marginBottom: 20 },
   barcodeContanier: {
     alignItems: "center",
     borderRadius: 8,

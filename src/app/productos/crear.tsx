@@ -1,4 +1,11 @@
-import { Alert, Button, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Button,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
 import { useEffect, useState } from "react";
@@ -9,6 +16,8 @@ import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Product } from "../movimientos/crear";
+import { FlatList } from "react-native";
+import { CategoriaRepository } from "../../database/repositories/categoriaRepository";
 
 export default function CrearProductos() {
   const [nombre, setNombre] = useState("");
@@ -17,6 +26,19 @@ export default function CrearProductos() {
   const [codigo, setCodigo] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("0");
   const params = useLocalSearchParams();
+
+  const [categorias, setCategorias] = useState<any[]>([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<
+    number | null
+  >(null);
+
+  useEffect(() => {
+    const loadCategorias = async () => {
+      const data = await CategoriaRepository.getAll();
+      setCategorias(data);
+    };
+    loadCategorias();
+  }, []);
 
   // 2. Escuchamos cuándo cambian los parámetros de la ruta (cuando el escáner regresa)
   useEffect(() => {
@@ -34,10 +56,6 @@ export default function CrearProductos() {
       router.navigate("/pos/scanner?modo=asig");
     }
   };
-
-  // useEffect(() => {
-  //   generarCodigoBarras();
-  // }, []);
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -66,7 +84,8 @@ export default function CrearProductos() {
   };
 
   const guardar = async () => {
-    if (!validar()) {
+    if (!nombre || !precio || !codigo || !categoriaSeleccionada) {
+      Alert.alert("Error", "Todos los campos y la categoría son obligatorios.");
       return;
     }
     try {
@@ -90,11 +109,13 @@ export default function CrearProductos() {
         Number(precio),
         Number(stock),
         codigo,
-        codigoBarras
+        codigoBarras,
+        categoriaSeleccionada
       );
       Alert.alert("Exito", "Producto creado exitosamente.");
     } catch (error) {
       Alert.alert("Error", "No se pudo crear el producto");
+      console.log(error);
     }
     router.back();
   };
@@ -140,6 +161,31 @@ export default function CrearProductos() {
         {codigoBarras != "0" && (
           <BarcodeGenerator value={codigoBarras} showText={true} />
         )}
+
+        <Text style={styles.subtitle}>Categoría:</Text>
+        <FlatList
+          horizontal
+          data={categorias}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => setCategoriaSeleccionada(item.id)}
+              style={[
+                styles.chip,
+                categoriaSeleccionada === item.id && styles.chipActive,
+              ]}
+            >
+              <Text
+                style={
+                  categoriaSeleccionada === item.id ? { color: "white" } : {}
+                }
+              >
+                {item.nombre}
+              </Text>
+            </TouchableOpacity>
+          )}
+          style={{ marginBottom: 20 }}
+        />
       </View>
       <Button title="Guardar" onPress={guardar} />
     </SafeAreaView>
@@ -178,4 +224,13 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
   },
+  subtitle: { fontSize: 16, fontWeight: "bold", marginVertical: 10 },
+  chip: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: "#eee",
+    marginRight: 10,
+    borderRadius: 20,
+  },
+  chipActive: { backgroundColor: "#0ab546" },
 });

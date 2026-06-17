@@ -71,7 +71,6 @@ const ScannerClient = () => {
         const cliente = (await clientesRepository.getByRuc(ruc[1])) as Cliente;
         if (cliente) {
           setClientId(cliente.id);
-          // Alert.alert("Cliente seleccionado", `Cliente: ${cliente.nombre}`);
           router.back();
         } else {
           Alert.alert("Error", `No se encontró un cliente con RUC: ${data}`);
@@ -91,7 +90,7 @@ const ScannerClient = () => {
       )) as Cliente;
       if (!clienteEncontrado) {
         Alert.alert(
-          "El codigo de barras del Producto a insertar es:",
+          "El codigo de Ruc del cliente a insertar es:",
           `Código: ${ruc[1]}`
         );
         router.dismissTo({
@@ -140,9 +139,7 @@ const ScannerClient = () => {
           </View>
           <View style={styles.unfocusedContainer}>
             <Text style={styles.scanText}>
-              {isProcessing
-                ? "Procesando..."
-                : "Coloque el código de barras aquí"}
+              {isProcessing ? "Procesando..." : "Coloque el código de qr aquí"}
             </Text>
           </View>
         </View>

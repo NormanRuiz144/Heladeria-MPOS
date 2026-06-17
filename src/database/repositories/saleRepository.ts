@@ -26,12 +26,10 @@ export const SaleRepository = {
 
   async getReportByDateRange(startDate: string, endDate: string) {
     const database = await db;
-    const start = `${startDate} 00:00:00`;
-    const end = `${endDate} 23:59:59`;
-
+    // Cambiamos a date(fecha) para ignorar la hora y ser consistentes con el reporte de ventas varias
     return database.getAllAsync(
-      "SELECT * FROM ventas WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC",
-      [start, end]
+      "SELECT * FROM ventas WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha DESC",
+      [startDate, endDate]
     );
   },
 };

@@ -4,13 +4,14 @@ import {
   Text,
   View,
   FlatList,
-  TextInput,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { SaleRepository } from "../../database/repositories/saleRepository";
+import { VariosRepository } from "../../database/repositories/variosRepository";
 import { MetodoPagoRepository } from "../../database/repositories/metodoPagoRepository";
 import SalesCard from "../../componentes/SalesCard";
 import { IVenta, MetodoPagoItem } from "../../componentes/SalesHistory";
@@ -20,63 +21,74 @@ import { PrintSalesReport } from "../../print_service/Print";
 export default function Reportes() {
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
-  const [sales, setSales] = useState<IVenta[]>([]);
+  const [reportData, setReportData] = useState<any[]>([]);
   const [totalPeriodo, setTotalPeriodo] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  const [showPicker, setShowPicker] = useState(false);
+  const [currentField, setCurrentField] = useState<"start" | "end">("start");
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowPicker(false);
+    if (selectedDate) {
+      const formattedDate = selectedDate.toLocaleDateString("en-CA");
+      if (currentField === "start") setDateStart(formattedDate);
+      else setDateEnd(formattedDate);
+    }
+  };
+
   const generarReporte = async () => {
-    // 1. Validaciones de integridad
-    if (!dateStart.trim() || !dateEnd.trim()) {
-      Alert.alert(
-        "Campos vacíos",
-        "Por favor ingresa el rango de fechas (AAAA-MM-DD)."
-      );
+    if (!dateStart || !dateEnd) {
+      Alert.alert("Campos vacíos", "Por favor selecciona ambas fechas.");
       return;
     }
 
     if (dateStart > dateEnd) {
       Alert.alert(
         "Rango Inválido",
-        "La fecha de inicio no puede ser mayor a la fecha final."
+        "La fecha de inicio no puede ser mayor a la final."
       );
       return;
     }
 
-    const hoy = new Date().toISOString().split("T")[0];
-    if (dateEnd > hoy) {
-      Alert.alert(
-        "Fecha Futura",
-        "No puedes consultar ventas que aún no han ocurrido."
-      );
-      return;
-    }
-
-    // 2. Consulta a Base de Datos
     setLoading(true);
     try {
-      // Usamos el repositorio con el filtro de fechas
-      const data = (await SaleRepository.getReportByDateRange(
+      const ventas = (await SaleRepository.getReportByDateRange(
         dateStart,
         dateEnd
       )) as IVenta[];
-      for (const venta of data) {
-        const metodos = await MetodoPagoRepository.getByVentaId(venta.id);
-        venta.metodos_pago = metodos as MetodoPagoItem[];
-      }
-      setSales(data);
+      const extras = (await VariosRepository.getReportByDateRange(
+        dateStart,
+        dateEnd
+      )) as any[];
 
-      // Calculamos el total (solo sumamos ventas activas, estado === false)
-      const sum = data.reduce(
-        (acc, current) => acc + (current.estado ? 0 : current.total),
+      for (const venta of ventas) {
+        venta.metodos_pago = (await MetodoPagoRepository.getByVentaId(
+          venta.id
+        )) as MetodoPagoItem[];
+      }
+
+      const totalVentas = ventas.reduce(
+        (acc, v) => acc + (v.estado ? 0 : v.total),
         0
       );
-      setTotalPeriodo(sum);
+      const totalExtras = extras.reduce((acc, e) => acc + e.monto, 0);
 
-      if (data.length === 0) {
-        Alert.alert("Info", "No se encontraron registros en estas fechas.");
-      }
+      const combinado = [
+        ...ventas.map((v) => ({ ...v, tipo: "venta" })),
+        ...extras.map((e) => ({ ...e, tipo: "extra" })),
+      ].sort(
+        (a: any, b: any) =>
+          new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      );
+
+      setReportData(combinado);
+      setTotalPeriodo(totalVentas + totalExtras);
+
+      if (combinado.length === 0)
+        Alert.alert("Info", "No se encontraron registros.");
     } catch (error) {
-      Alert.alert("Error SQL", "Hubo un fallo al obtener los datos: " + error);
+      Alert.alert("Error", "Fallo al obtener datos: " + error);
     } finally {
       setLoading(false);
     }
@@ -86,30 +98,38 @@ export default function Reportes() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Reportes Administrativos</Text>
 
-      {/* Panel de Filtros */}
       <View style={styles.filterContainer}>
         <View style={styles.inputRow}>
-          <View style={styles.inputGroup}>
+          <TouchableOpacity
+            style={styles.inputGroup}
+            onPress={() => {
+              setCurrentField("start");
+              setShowPicker(true);
+            }}
+          >
             <Text style={styles.label}>Fecha Inicial:</Text>
-            <TextInput
-              style={styles.input}
-              value={dateStart}
-              onChangeText={setDateStart}
-              placeholder="2026-05-01"
-              keyboardType="numeric"
-            />
-          </View>
-          <View style={styles.inputGroup}>
+            <Text style={styles.input}>{dateStart || "AAAA-MM-DD"}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.inputGroup}
+            onPress={() => {
+              setCurrentField("end");
+              setShowPicker(true);
+            }}
+          >
             <Text style={styles.label}>Fecha Final:</Text>
-            <TextInput
-              style={styles.input}
-              value={dateEnd}
-              onChangeText={setDateEnd}
-              placeholder="2026-05-31"
-              keyboardType="numeric"
-            />
-          </View>
+            <Text style={styles.input}>{dateEnd || "AAAA-MM-DD"}</Text>
+          </TouchableOpacity>
         </View>
+
+        {showPicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+          />
+        )}
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
@@ -130,12 +150,12 @@ export default function Reportes() {
           <TouchableOpacity
             style={[
               styles.btnExportar,
-              sales.length === 0 && styles.btnDisabled,
+              reportData.length === 0 && styles.btnDisabled,
             ]}
             onPress={() =>
-              PrintSalesReport(sales, totalPeriodo, dateStart, dateEnd)
+              PrintSalesReport(reportData, totalPeriodo, dateStart, dateEnd)
             }
-            disabled={sales.length === 0 || loading}
+            disabled={reportData.length === 0 || loading}
           >
             <FontAwesome5 name="file-pdf" size={16} color="white" />
             <Text style={styles.btnText}> Exportar</Text>
@@ -143,29 +163,31 @@ export default function Reportes() {
         </View>
       </View>
 
-      {/* Resumen Financiero */}
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>TOTAL RECAUDADO (NETO)</Text>
         <Text style={styles.summaryAmount}>C$ {totalPeriodo.toFixed(2)}</Text>
       </View>
 
-      {/* Lista de Resultados */}
       <FlatList
-        data={sales}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <SalesCard
-            item={item}
-            anularVenta={() => {}}
-            printVoucher={() => {}}
-            zone="reporte"
-          />
-        )}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        ListEmptyComponent={
-          !loading ? (
-            <Text style={styles.emptyText}>No hay datos para mostrar</Text>
-          ) : null
+        data={reportData}
+        keyExtractor={(item, index) => `${item.tipo}-${item.id || index}`}
+        renderItem={({ item }) =>
+          item.tipo === "venta" ? (
+            <View style={styles.cardVenta}>
+              <SalesCard
+                item={item}
+                anularVenta={() => {}}
+                printVoucher={() => {}}
+                zone="reporte"
+              />
+            </View>
+          ) : (
+            <View style={styles.cardExtra}>
+              <Text style={styles.name}>Venta Extra: {item.descripcion}</Text>
+              <Text style={styles.motivo}>{item.motivo}</Text>
+              <Text style={styles.monto}>C$ {item.monto.toFixed(2)}</Text>
+            </View>
+          )
         }
       />
     </SafeAreaView>
@@ -194,12 +216,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   inputGroup: { width: "48%" },
-  label: { fontSize: 12, color: "#777", marginBottom: 4 },
+  label: { fontSize: 12, color: "#777" },
   input: {
     borderBottomWidth: 1,
     borderColor: "#0ab546",
     paddingVertical: 6,
     fontSize: 16,
+    color: "#333",
   },
   actionButtons: { flexDirection: "row", gap: 10 },
   btnConsultar: {
@@ -233,10 +256,18 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { color: "#0ab546", fontSize: 11, fontWeight: "bold" },
   summaryAmount: { color: "#fff", fontSize: 30, fontWeight: "bold" },
-  emptyText: {
-    textAlign: "center",
-    marginTop: 30,
-    color: "#999",
-    fontStyle: "italic",
+  cardVenta: { backgroundColor: "#ffffff", borderRadius: 8, marginBottom: 10 }, // Sin bordes verdes
+  cardExtra: {
+    backgroundColor: "#fff8e1",
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#ffe0b2",
+    borderLeftWidth: 5,
+    borderLeftColor: "#ff9800",
   },
+  name: { fontWeight: "bold", fontSize: 16, color: "#333" },
+  motivo: { fontSize: 12, color: "#666" },
+  monto: { fontWeight: "bold", fontSize: 16, color: "#0ab546" },
 });

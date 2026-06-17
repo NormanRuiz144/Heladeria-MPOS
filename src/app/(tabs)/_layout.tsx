@@ -40,6 +40,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="categoria"
+        options={{
+          title: "categoria",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="stats-chart" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

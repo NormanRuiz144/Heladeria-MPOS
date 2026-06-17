@@ -3,7 +3,11 @@ import { db } from "../database";
 export const ProductRepository = {
   async getAll() {
     const database = await db;
-    return database.getAllAsync("SELECT * FROM productos");
+    return database.getAllAsync(`
+      SELECT p.*, c.nombre as categoria_nombre 
+      FROM productos p 
+      LEFT JOIN categorias c ON p.categoria_id = c.id
+    `);
   },
 
   async getById(id: number) {
@@ -25,12 +29,13 @@ export const ProductRepository = {
     precio: number,
     stock: number,
     codigo: string,
-    codigoBarras: string
+    codigoBarras: string,
+    categoria_id: number
   ) {
     const database = await db;
     return database.runAsync(
-      "INSERT INTO productos (nombre,precio,stock,codigo,codigo_barras) VALUES (?,?,?,?,?)",
-      [nombre, precio, stock, codigo, codigoBarras]
+      "INSERT INTO productos (nombre,precio,stock,codigo,codigo_barras,categoria_id) VALUES (?,?,?,?,?,?)",
+      [nombre, precio, stock, codigo, codigoBarras, categoria_id]
     );
   },
   async update(
@@ -38,12 +43,13 @@ export const ProductRepository = {
     nombre: string,
     precio: number,
     stock: number,
-    codigo: string
+    codigo: string,
+    categoria_id: number
   ) {
     const database = await db;
     return database.runAsync(
-      "UPDATE productos SET nombre=?,precio=?,stock=?,codigo=? WHERE id=?",
-      [nombre, precio, stock, codigo, id]
+      "UPDATE productos SET nombre=?,precio=?,stock=?,codigo=?, categoria_id = ? WHERE id=?",
+      [nombre, precio, stock, codigo, categoria_id, id]
     );
   },
 
