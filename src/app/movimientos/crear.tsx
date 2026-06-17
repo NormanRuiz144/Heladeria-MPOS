@@ -21,6 +21,8 @@ export interface Product {
   precio: number;
   stock: number;
   codigo: string;
+  imagen?: string;
+  info_relevante: string;
 }
 
 export default function CrearMovimiento() {

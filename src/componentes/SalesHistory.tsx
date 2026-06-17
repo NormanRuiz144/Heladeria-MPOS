@@ -118,6 +118,8 @@ export default function SalesHistory() {
           precio: product.precio,
           stock: product.stock,
           codigo: product.codigo,
+          imagen: product.imagen,
+          info_relevante: product.info_relevante,
         },
         quantity: detalle.cantidad,
       });

@@ -88,7 +88,26 @@ export const runMigrations = async () => {
       -- CREATE INDEX IF NOT EXISTS idx_clientes_ruc ON clientes(ruc);
     `);
 
-    const database = await db;
+  const database = await db;
+
+// Migración para la columna 'imagen'
+try {
+  await database.runAsync("ALTER TABLE productos ADD COLUMN imagen TEXT;");
+  console.log("Columna 'imagen' verificada/añadida con éxito.");
+} catch (error) {
+  // Entrará aquí si la columna ya existía, lo cual es normal en la segunda ejecución
+  console.log("La columna 'imagen' ya existía o no se pudo crear:", error);
+}
+
+// Migración para la columna 'info_relevante'
+try {
+  await database.runAsync("ALTER TABLE productos ADD COLUMN info_relevante TEXT;");
+  console.log("Columna 'info_relevante' verificada/añadida con éxito.");
+} catch (error) {
+  console.log("La columna 'info_relevante' ya existía o no se pudo crear:", error);
+}
+
+
     try {
       await database.runAsync(
         "ALTER TABLE movimientos_inventario ADD COLUMN estado BOOLEAN DEFAULT false"
@@ -128,5 +147,6 @@ export const runMigrations = async () => {
     } catch {}
   } catch (error) {
     console.log("Migration error:", error);
-  }
+  };
+
 };

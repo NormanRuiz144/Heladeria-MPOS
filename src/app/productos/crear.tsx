@@ -1,10 +1,14 @@
 import {
   Alert,
   Button,
+  Image,
+  Pressable,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
+  FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
@@ -12,12 +16,12 @@ import { useEffect, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { router, useLocalSearchParams } from "expo-router";
 import BarcodeGenerator from "../../componentes/showBarCode";
-import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Product } from "../movimientos/crear";
-import { FlatList } from "react-native";
 import { CategoriaRepository } from "../../database/repositories/categoriaRepository";
+import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 
 export default function CrearProductos() {
   const [nombre, setNombre] = useState("");
@@ -26,11 +30,10 @@ export default function CrearProductos() {
   const [codigo, setCodigo] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("0");
   const params = useLocalSearchParams();
-
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<
-    number | null
-  >(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
+  const [imagen, setImagen] = useState("");
+  const [info_relevante, setInfo_relevante] = useState("");
 
   useEffect(() => {
     const loadCategorias = async () => {
@@ -40,7 +43,6 @@ export default function CrearProductos() {
     loadCategorias();
   }, []);
 
-  // 2. Escuchamos cuándo cambian los parámetros de la ruta (cuando el escáner regresa)
   useEffect(() => {
     if (params?.data) {
       setCodigoBarras(params.data as string);
@@ -48,7 +50,6 @@ export default function CrearProductos() {
   }, [params?.data]);
 
   const generarCodigoBarras = (modo: string = "auto") => {
-    // Genera un código de barras único basado en el timestamp y un número aleatorio
     if (modo == "auto") {
       setCodigoBarras((Math.random() * 1000000000).toFixed());
       return;
@@ -57,9 +58,40 @@ export default function CrearProductos() {
     }
   };
 
+  const manejarSeleccionImagen = async () => {
+    const permisos = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permisos.granted) {
+      Alert.alert("Permiso requerido", "Necesitamos acceso a tus fotos.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+    });
+
+    if (result.canceled) return;
+
+    const uriOriginal = result.assets[0].uri;
+    const nombreArchivo = `producto_${Date.now()}.jpg`;
+    if (!FileSystem.documentDirectory) {
+      Alert.alert("Error", "No se pudo acceder al directorio de documentos");
+      return;
+    }
+    const rutaPermanente = `${FileSystem.documentDirectory}${nombreArchivo}`;
+    await FileSystem.copyAsync({ from: uriOriginal, to: rutaPermanente });
+    setImagen(rutaPermanente);
+  };
+
   const validar = () => {
     if (!nombre.trim()) {
       Alert.alert("Error", "El nombre es obligatorio.");
+      return false;
+    }
+    if (!info_relevante.trim()) {
+      Alert.alert("Error", "Escriba la informacion del producto.");
       return false;
     }
     if (!codigo.trim()) {
@@ -67,17 +99,11 @@ export default function CrearProductos() {
       return false;
     }
     if (!precio.trim() || isNaN(Number(precio)) || Number(precio) < 0) {
-      Alert.alert(
-        "Error",
-        "El precio debe ser un numero mayor o igual que cero."
-      );
+      Alert.alert("Error", "El precio debe ser un numero mayor o igual que cero.");
       return false;
     }
     if (!stock.trim() || isNaN(Number(stock)) || Number(stock) < 0) {
-      Alert.alert(
-        "Error",
-        "El stock debe ser un numero mayor o igual que cero."
-      );
+      Alert.alert("Error", "El stock debe ser un numero mayor o igual que cero.");
       return false;
     }
     return true;
@@ -94,14 +120,9 @@ export default function CrearProductos() {
         Alert.alert("Error", "El codigo ya existe.");
         return;
       }
-      const isUniqueBarCode = (await ProductRepository.searchByCodigoBarras(
-        codigoBarras
-      )) as Product;
+      const isUniqueBarCode = (await ProductRepository.searchByCodigoBarras(codigoBarras)) as Product;
       if (isUniqueBarCode) {
-        Alert.alert(
-          "Error",
-          "El codigo de barras ya esta asociado con un producto."
-        );
+        Alert.alert("Error", "El codigo de barras ya esta asociado con un producto.");
         return;
       }
       await ProductRepository.create(
@@ -110,57 +131,52 @@ export default function CrearProductos() {
         Number(stock),
         codigo,
         codigoBarras,
-        categoriaSeleccionada
+        categoriaSeleccionada,
+        imagen,
+        info_relevante
       );
       Alert.alert("Exito", "Producto creado exitosamente.");
+      router.back();
     } catch (error) {
       Alert.alert("Error", "No se pudo crear el producto");
       console.log(error);
     }
-    router.back();
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Nuevo Producto</Text>
-      <InputField
-        placeholder="Nombre"
-        value={nombre}
-        onChangeText={setNombre}
-      />
-      <InputField
-        placeholder="Codigo"
-        value={codigo}
-        onChangeText={setCodigo}
-      />
-      <InputField
-        placeholder="Precio"
-        value={precio}
-        onChangeText={setPrecio}
-      />
+      <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
+      <InputField placeholder="Información" value={info_relevante} onChangeText={setInfo_relevante} />
+      <InputField placeholder="Codigo" value={codigo} onChangeText={setCodigo} />
+      <InputField placeholder="Precio" value={precio} onChangeText={setPrecio} />
       <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
+
+      <TouchableOpacity style={styles.buttonImaje} onPress={manejarSeleccionImagen}>
+        <Text style={styles.buttonText}>Seleccionar Imagen</Text>
+      </TouchableOpacity>
+      {imagen ? (
+        <View style={styles.imagePreviewContainer}>
+          <Image source={{ uri: imagen }} style={styles.imagePreview} />
+          <TouchableOpacity style={styles.imageDismissButton} onPress={() => setImagen("")}>
+            <Text style={styles.imageDismissText}>X</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       <View style={styles.barcodeContanier}>
-        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-          Código de Barras generado para el producto:
-        </Text>
+        <Text style={{ fontWeight: "bold", fontSize: 16 }}>Código de Barras generado para el producto:</Text>
         <View style={styles.barcodeButtons}>
-          <Pressable
-            style={styles.scanButton}
-            onPress={() => generarCodigoBarras("scan")}
-          >
+          <Pressable style={styles.scanButton} onPress={() => generarCodigoBarras("scan")}>
             <Ionicons name="scan" size={24} color="white" />
             <Text style={styles.scanButtonText}>Scan</Text>
           </Pressable>
-          <Pressable
-            style={styles.scanButton}
-            onPress={() => generarCodigoBarras()}
-          >
+          <Pressable style={styles.scanButton} onPress={() => generarCodigoBarras()}>
             <FontAwesome name="gear" size={24} color="white" />
             <Text style={styles.scanButtonText}>Auto</Text>
           </Pressable>
         </View>
-        {codigoBarras != "0" && (
-          <BarcodeGenerator value={codigoBarras} showText={true} />
-        )}
+        {codigoBarras != "0" && <BarcodeGenerator value={codigoBarras} showText={true} />}
 
         <Text style={styles.subtitle}>Categoría:</Text>
         <FlatList
@@ -170,16 +186,9 @@ export default function CrearProductos() {
           renderItem={({ item }) => (
             <TouchableOpacity
               onPress={() => setCategoriaSeleccionada(item.id)}
-              style={[
-                styles.chip,
-                categoriaSeleccionada === item.id && styles.chipActive,
-              ]}
+              style={[styles.chip, categoriaSeleccionada === item.id && styles.chipActive]}
             >
-              <Text
-                style={
-                  categoriaSeleccionada === item.id ? { color: "white" } : {}
-                }
-              >
+              <Text style={categoriaSeleccionada === item.id ? { color: "white" } : {}}>
                 {item.nombre}
               </Text>
             </TouchableOpacity>
@@ -187,7 +196,10 @@ export default function CrearProductos() {
           style={{ marginBottom: 20 }}
         />
       </View>
-      <Button title="Guardar" onPress={guardar} />
+
+      <TouchableOpacity style={styles.buttonImaje} onPress={guardar}>
+        <Text style={styles.buttonText}>Guardar</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -233,4 +245,42 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   chipActive: { backgroundColor: "#0ab546" },
+  buttonImaje: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "green",
+    backgroundColor: "blue",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+  },
+  imagePreviewContainer: {
+    position: "relative",
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  imagePreview: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+  },
+  imageDismissButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "red",
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageDismissText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
 });
