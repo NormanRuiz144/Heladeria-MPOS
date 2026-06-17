@@ -36,7 +36,8 @@ const inventario = () => {
           text: "Eliminar",
           style: "destructive",
           onPress: async () => {
-            ProductRepository.delete(id);
+            const product = (await ProductRepository.getById(id)) as any;
+            await ProductRepository.delete(id, product?.imagen);
             loadProductos();
           },
         },
