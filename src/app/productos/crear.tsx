@@ -32,7 +32,9 @@ export default function CrearProductos() {
   const [codigoBarras, setCodigoBarras] = useState("0");
   const params = useLocalSearchParams();
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<
+    number | null
+  >(null);
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
 
@@ -100,11 +102,17 @@ export default function CrearProductos() {
       return false;
     }
     if (!precio.trim() || isNaN(Number(precio)) || Number(precio) < 0) {
-      Alert.alert("Error", "El precio debe ser un numero mayor o igual que cero.");
+      Alert.alert(
+        "Error",
+        "El precio debe ser un numero mayor o igual que cero."
+      );
       return false;
     }
     if (!stock.trim() || isNaN(Number(stock)) || Number(stock) < 0) {
-      Alert.alert("Error", "El stock debe ser un numero mayor o igual que cero.");
+      Alert.alert(
+        "Error",
+        "El stock debe ser un numero mayor o igual que cero."
+      );
       return false;
     }
     return true;
@@ -121,9 +129,14 @@ export default function CrearProductos() {
         Alert.alert("Error", "El codigo ya existe.");
         return;
       }
-      const isUniqueBarCode = (await ProductRepository.searchByCodigoBarras(codigoBarras)) as Product;
+      const isUniqueBarCode = (await ProductRepository.searchByCodigoBarras(
+        codigoBarras
+      )) as Product;
       if (isUniqueBarCode) {
-        Alert.alert("Error", "El codigo de barras ya esta asociado con un producto.");
+        Alert.alert(
+          "Error",
+          "El codigo de barras ya esta asociado con un producto."
+        );
         return;
       }
       await ProductRepository.create(
@@ -148,60 +161,100 @@ export default function CrearProductos() {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <Text style={styles.title}>Nuevo Producto</Text>
-      <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-      <InputField placeholder="Información" value={info_relevante} onChangeText={setInfo_relevante} />
-      <InputField placeholder="Codigo" value={codigo} onChangeText={setCodigo} />
-      <InputField placeholder="Precio" value={precio} onChangeText={setPrecio} />
-      <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
-
-      <TouchableOpacity style={styles.buttonImaje} onPress={manejarSeleccionImagen}>
-        <Text style={styles.buttonText}>Seleccionar Imagen</Text>
-      </TouchableOpacity>
-      {imagen ? (
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: imagen }} style={styles.imagePreview} />
-          <TouchableOpacity style={styles.imageDismissButton} onPress={() => setImagen("")}>
-            <Text style={styles.imageDismissText}>X</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      <View style={styles.barcodeContanier}>
-        <Text style={{ fontWeight: "bold", fontSize: 16 }}>Código de Barras generado para el producto:</Text>
-        <View style={styles.barcodeButtons}>
-          <Pressable style={styles.scanButton} onPress={() => generarCodigoBarras("scan")}>
-            <Ionicons name="scan" size={24} color="white" />
-            <Text style={styles.scanButtonText}>Scan</Text>
-          </Pressable>
-          <Pressable style={styles.scanButton} onPress={() => generarCodigoBarras()}>
-            <FontAwesome name="gear" size={24} color="white" />
-            <Text style={styles.scanButtonText}>Auto</Text>
-          </Pressable>
-        </View>
-        {codigoBarras != "0" && <BarcodeGenerator value={codigoBarras} showText={true} />}
-
-        <Text style={styles.subtitle}>Categoría:</Text>
-        <FlatList
-          horizontal
-          data={categorias}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => setCategoriaSeleccionada(item.id)}
-              style={[styles.chip, categoriaSeleccionada === item.id && styles.chipActive]}
-            >
-              <Text style={categoriaSeleccionada === item.id ? { color: "white" } : {}}>
-                {item.nombre}
-              </Text>
-            </TouchableOpacity>
-          )}
-          style={{ marginBottom: 20 }}
+        <InputField
+          placeholder="Nombre"
+          value={nombre}
+          onChangeText={setNombre}
         />
-      </View>
+        <InputField
+          placeholder="Información"
+          value={info_relevante}
+          onChangeText={setInfo_relevante}
+        />
+        <InputField
+          placeholder="Codigo"
+          value={codigo}
+          onChangeText={setCodigo}
+        />
+        <InputField
+          placeholder="Precio"
+          value={precio}
+          onChangeText={setPrecio}
+        />
+        <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
 
-      <TouchableOpacity style={styles.buttonImaje} onPress={guardar}>
-        <Text style={styles.buttonText}>Guardar</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.buttonImaje}
+          onPress={manejarSeleccionImagen}
+        >
+          <Text style={styles.buttonText}>Seleccionar Imagen</Text>
+        </TouchableOpacity>
+        {imagen ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: imagen }} style={styles.imagePreview} />
+            <TouchableOpacity
+              style={styles.imageDismissButton}
+              onPress={() => setImagen("")}
+            >
+              <Text style={styles.imageDismissText}>X</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={styles.barcodeContanier}>
+          <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+            Código de Barras generado para el producto:
+          </Text>
+          <View style={styles.barcodeButtons}>
+            <Pressable
+              style={styles.scanButton}
+              onPress={() => generarCodigoBarras("scan")}
+            >
+              <Ionicons name="scan" size={24} color="white" />
+              <Text style={styles.scanButtonText}>Scan</Text>
+            </Pressable>
+            <Pressable
+              style={styles.scanButton}
+              onPress={() => generarCodigoBarras()}
+            >
+              <FontAwesome name="gear" size={24} color="white" />
+              <Text style={styles.scanButtonText}>Auto</Text>
+            </Pressable>
+          </View>
+          {codigoBarras != "0" && (
+            <BarcodeGenerator value={codigoBarras} showText={true} />
+          )}
+
+          <Text style={styles.subtitle}>Categoría:</Text>
+          <FlatList
+            horizontal
+            data={categorias}
+            keyExtractor={(item) => item.id.toString()}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => setCategoriaSeleccionada(item.id)}
+                style={[
+                  styles.chip,
+                  categoriaSeleccionada === item.id && styles.chipActive,
+                ]}
+              >
+                <Text
+                  style={
+                    categoriaSeleccionada === item.id ? { color: "white" } : {}
+                  }
+                >
+                  {item.nombre}
+                </Text>
+              </TouchableOpacity>
+            )}
+            style={{ marginBottom: 20 }}
+          />
+        </View>
+
+        <TouchableOpacity style={styles.buttonImaje} onPress={guardar}>
+          <Text style={styles.buttonText}>Guardar</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -256,6 +309,7 @@ const styles = StyleSheet.create({
     backgroundColor: "blue",
     borderRadius: 8,
     alignItems: "center",
+    padding: 15,
   },
   buttonText: {
     color: "white",

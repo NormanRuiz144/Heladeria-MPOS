@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -43,6 +43,16 @@ export default function pos() {
     setMonto("");
   };
 
+  // const cargarIngresos = async () => {
+  //     const hoy = new Date().toISOString().split('T')[0];
+  //     const data = await VariosRepository.getReportByDateRange(hoy, hoy);
+  //     setExtras(data || []);
+  //   };
+
+  //   useEffect(()=> {
+
+  //   },[vista])
+
   return (
     <SafeAreaView style={styles.container}>
       <ProductSearch />
@@ -51,16 +61,36 @@ export default function pos() {
       <View style={styles.header}>
         <View style={styles.toggleGroup}>
           <TouchableOpacity
-            style={[styles.toggleBtn, vista === "historial" && styles.toggleBtnActive]}
+            style={[
+              styles.toggleBtn,
+              vista === "historial" && styles.toggleBtnActive,
+            ]}
             onPress={() => setVista("historial")}
           >
-            <Text style={[styles.toggleBtnText, vista === "historial" && styles.toggleBtnTextActive]}>Ventas</Text>
+            <Text
+              style={[
+                styles.toggleBtnText,
+                vista === "historial" && styles.toggleBtnTextActive,
+              ]}
+            >
+              Ventas
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.toggleBtn, vista === "ingresos" && styles.toggleBtnActive]}
+            style={[
+              styles.toggleBtn,
+              vista === "ingresos" && styles.toggleBtnActive,
+            ]}
             onPress={() => setVista("ingresos")}
           >
-            <Text style={[styles.toggleBtnText, vista === "ingresos" && styles.toggleBtnTextActive]}>Ingresos</Text>
+            <Text
+              style={[
+                styles.toggleBtnText,
+                vista === "ingresos" && styles.toggleBtnTextActive,
+              ]}
+            >
+              Ingresos
+            </Text>
           </TouchableOpacity>
         </View>
         <TouchableOpacity

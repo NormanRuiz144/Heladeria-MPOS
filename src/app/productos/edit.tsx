@@ -36,7 +36,9 @@ export default function editarProducto() {
   const [codigo, setCodigo] = useState("");
   const [codigoBarras, setCodigoBarras] = useState("");
   const [categorias, setCategorias] = useState<any[]>([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<
+    number | null
+  >(null);
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
 
@@ -54,11 +56,17 @@ export default function editarProducto() {
       return false;
     }
     if (!precio.trim() || isNaN(Number(precio)) || Number(precio) < 0) {
-      Alert.alert("Error", "El precio debe ser un numero mayor o igual que cero.");
+      Alert.alert(
+        "Error",
+        "El precio debe ser un numero mayor o igual que cero."
+      );
       return false;
     }
     if (!stock.trim() || isNaN(Number(stock)) || Number(stock) < 0) {
-      Alert.alert("Error", "El stock debe ser un numero mayor o igual que cero.");
+      Alert.alert(
+        "Error",
+        "El stock debe ser un numero mayor o igual que cero."
+      );
       return false;
     }
     return true;
@@ -120,7 +128,10 @@ export default function editarProducto() {
     }
 
     try {
-      const isUnique = await ProductRepository.isCodigoUnique(codigo, Number(id));
+      const isUnique = await ProductRepository.isCodigoUnique(
+        codigo,
+        Number(id)
+      );
       if (!isUnique) {
         Alert.alert("Error", "El codigo ya existe.");
         return;
@@ -147,52 +158,82 @@ export default function editarProducto() {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <Text style={styles.title}>Editar Producto</Text>
-      <InputField placeholder="Nombre" value={nombre} onChangeText={setNombre} />
-      <InputField placeholder="Información" value={info_relevante} onChangeText={setInfo_relevante} />
-      <InputField placeholder="Codigo" value={codigo} onChangeText={setCodigo} />
-      <InputField placeholder="Precio" value={precio} onChangeText={setPrecio} />
-      <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
+        <InputField
+          placeholder="Nombre"
+          value={nombre}
+          onChangeText={setNombre}
+        />
+        <InputField
+          placeholder="Información"
+          value={info_relevante}
+          onChangeText={setInfo_relevante}
+        />
+        <InputField
+          placeholder="Codigo"
+          value={codigo}
+          onChangeText={setCodigo}
+        />
+        <InputField
+          placeholder="Precio"
+          value={precio}
+          onChangeText={setPrecio}
+        />
+        <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
 
-      <TouchableOpacity style={styles.buttonImaje} onPress={manejarSeleccionImagen}>
-        <Text style={styles.buttonText}>Seleccionar Imagen</Text>
-      </TouchableOpacity>
-      {imagen ? (
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: imagen }} style={styles.imagePreview} />
-          <TouchableOpacity style={styles.imageDismissButton} onPress={() => setImagen("")}>
-            <Text style={styles.imageDismissText}>X</Text>
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.buttonImaje}
+          onPress={manejarSeleccionImagen}
+        >
+          <Text style={styles.buttonText}>Cambiar Imagen</Text>
+        </TouchableOpacity>
+        {imagen ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: imagen }} style={styles.imagePreview} />
+            <TouchableOpacity
+              style={styles.imageDismissButton}
+              onPress={() => setImagen("")}
+            >
+              <Text style={styles.imageDismissText}>X</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
+
+        <View style={styles.barcodeContanier}>
+          <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+            Código de Barras asignado para el producto:
+          </Text>
+          <BarcodeGenerator value={codigoBarras} showText={true} />
         </View>
-      ) : null}
 
-      <View style={styles.barcodeContanier}>
-        <Text style={{ fontWeight: "bold", fontSize: 16 }}>
-          Código de Barras asignado para el producto:
-        </Text>
-        <BarcodeGenerator value={codigoBarras} showText={true} />
-      </View>
+        <Text style={styles.subtitle}>Cambiar Categoría:</Text>
+        <FlatList
+          horizontal
+          data={categorias}
+          keyExtractor={(item) => item.id.toString()}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => setCategoriaSeleccionada(item.id)}
+              style={[
+                styles.chip,
+                categoriaSeleccionada === item.id && styles.chipActive,
+              ]}
+            >
+              <Text
+                style={
+                  categoriaSeleccionada === item.id ? { color: "white" } : {}
+                }
+              >
+                {item.nombre}
+              </Text>
+            </TouchableOpacity>
+          )}
+          style={styles.chipList}
+        />
 
-      <Text style={styles.subtitle}>Categoría:</Text>
-      <FlatList
-        horizontal
-        data={categorias}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => setCategoriaSeleccionada(item.id)}
-            style={[styles.chip, categoriaSeleccionada === item.id && styles.chipActive]}
-          >
-            <Text style={categoriaSeleccionada === item.id ? { color: "white" } : {}}>
-              {item.nombre}
-            </Text>
-          </TouchableOpacity>
-        )}
-        style={styles.chipList}
-      />
-
-      <TouchableOpacity style={styles.buttonImaje} onPress={editar}>
-        <Text style={styles.buttonText}>Guardar Cambios</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.buttonImaje} onPress={editar}>
+          <Text style={styles.buttonText}>Guardar Cambios</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -223,8 +264,8 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 20,
-    color: "green",
     backgroundColor: "blue",
+    padding: 15,
     borderRadius: 8,
     alignItems: "center",
   },

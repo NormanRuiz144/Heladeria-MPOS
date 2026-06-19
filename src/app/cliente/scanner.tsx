@@ -109,7 +109,7 @@ const ScannerClient = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Escanear Producto</Text>
+        <Text style={styles.title}>Escanear Cedula</Text>
         <Text style={styles.link} onPress={() => router.back()}>
           Volver
         </Text>
