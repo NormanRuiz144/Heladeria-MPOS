@@ -57,7 +57,7 @@ export default function CrearProductos() {
       setCodigoBarras((Math.random() * 1000000000).toFixed());
       return;
     } else {
-      router.navigate("/pos/scanner?modo=asig");
+      router.navigate("/pos/scanner?modo=asig&apartado=crear");
     }
   };
 

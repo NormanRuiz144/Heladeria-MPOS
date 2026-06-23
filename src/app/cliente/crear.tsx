@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import InputField from "../productos/InputField";
 import { router, useLocalSearchParams } from "expo-router";
 import { Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { clientesRepository } from "../../database/repositories/clientesRepository";
 import { Cliente } from "../../database/repositories/clientesRepository";
 import { useCartStore } from "../../store/cartStore";
@@ -13,6 +13,7 @@ export default function CrearProductos() {
   const [nombre, setNombre] = useState("");
   const [ruc, setRuc] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [clienteList, setClienteList] = useState<Cliente[]>([]);
   const setClientId = useCartStore((state) => state.setClientId);
   const params = useLocalSearchParams();
@@ -41,7 +42,7 @@ export default function CrearProductos() {
       return false;
     }
     if (!telefono.trim()) {
-      Alert.alert("Error", "El RUC es obligatorio.");
+      Alert.alert("Error", "El telefono es obligatorio.");
       return false;
     }
     if (!ruc.trim()) {
@@ -52,19 +53,34 @@ export default function CrearProductos() {
   };
 
   const guardar = async () => {
-    if (!validar()) {
-      return;
-    }
+    if (!validar()) return;
     try {
-      const isUnique = await clientesRepository.getByRuc(ruc);
-      if (isUnique) {
-        Alert.alert("Error", "El codigo ya existe.");
+      const existente = await clientesRepository.getByRuc(ruc);
+      if (existente) {
+        Alert.alert("Error", "El RUC ya existe.");
         return;
       }
       const result = await clientesRepository.create(nombre, ruc, telefono);
       setClientId(result.lastInsertRowId);
     } catch (error) {
       Alert.alert("Error", "No se pudo registrar el cliente");
+    }
+    router.back();
+  };
+
+  const actualizar = async () => {
+    if (!validar() || editingId === null) return;
+    try {
+      const existente = (await clientesRepository.getByRuc(ruc)) as Cliente;
+      if (existente && existente.id !== editingId) {
+        Alert.alert("Error", "El RUC ya esta en uso por otro cliente.");
+        return;
+      }
+      await clientesRepository.update(editingId, nombre, ruc, telefono);
+      setClientId(editingId);
+      Alert.alert("Exito", "Cliente actualizado correctamente.");
+    } catch (error) {
+      Alert.alert("Error", "No se pudo actualizar el cliente");
     }
     router.back();
   };
@@ -95,7 +111,26 @@ export default function CrearProductos() {
           <Text style={styles.scanButtonText}>Scan</Text>
         </Pressable>
       </View>
-      <Button title="Guardar" onPress={guardar} />
+      {editingId ? (
+        <View style={styles.buttonRow}>
+          <View style={{ flex: 1, marginRight: 5 }}>
+            <Button title="Actualizar" onPress={actualizar} />
+          </View>
+          <View style={{ flex: 1, marginLeft: 5 }}>
+            <Button
+              title="Cancelar"
+              onPress={() => {
+                setEditingId(null);
+                setNombre("");
+                setRuc("");
+                setTelefono("");
+              }}
+            />
+          </View>
+        </View>
+      ) : (
+        <Button title="Guardar" onPress={guardar} />
+      )}
       <Text style={styles.subtitle}>Lista de clientes:</Text>
       <FlatList
         data={clienteList}
@@ -106,8 +141,10 @@ export default function CrearProductos() {
           <Pressable
             style={styles.card}
             onPress={() => {
-              setClientId(item.id);
-              router.back();
+              setNombre(item.nombre);
+              setRuc(item.ruc);
+              setTelefono(item.telefono || "");
+              setEditingId(item.id);
             }}
           >
             <View style={styles.cardBody}>
@@ -117,7 +154,7 @@ export default function CrearProductos() {
                 <Text style={styles.cardDetail}>Tel: {item.telefono}</Text>
               ) : null}
             </View>
-            {/* <Ionicons name="chevron-forward" size={20} color="#999" /> */}
+            <MaterialIcons name="edit" size={20} color="#999" />
           </Pressable>
         )}
       />
@@ -191,5 +228,9 @@ const styles = StyleSheet.create({
   scanButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    marginBottom: 10,
   },
 });

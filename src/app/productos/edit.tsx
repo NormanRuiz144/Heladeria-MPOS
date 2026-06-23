@@ -8,16 +8,18 @@ import {
   View,
   FlatList,
   TouchableOpacity,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InputField from "./InputField";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { router, useLocalSearchParams } from "expo-router";
 import BarcodeGenerator from "../../componentes/showBarCode";
 import { CategoriaRepository } from "../../database/repositories/categoriaRepository";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 
 interface Producto {
   id: number;
@@ -30,6 +32,7 @@ interface Producto {
 
 export default function editarProducto() {
   const { id } = useLocalSearchParams();
+  const idRef = useRef(id);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
   const [stock, setStock] = useState("");
@@ -41,6 +44,7 @@ export default function editarProducto() {
   >(null);
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
+  const params = useLocalSearchParams();
 
   const validar = () => {
     if (!nombre.trim()) {
@@ -70,6 +74,15 @@ export default function editarProducto() {
       return false;
     }
     return true;
+  };
+
+  const generarCodigoBarras = (modo: string = "auto") => {
+    if (modo == "auto") {
+      setCodigoBarras((Math.random() * 1000000000).toFixed());
+      return;
+    } else {
+      router.navigate("/pos/scanner?modo=asig&apartado=edit");
+    }
   };
 
   const manejarSeleccionImagen = async () => {
@@ -121,6 +134,12 @@ export default function editarProducto() {
     loadData();
   }, [id]);
 
+  useEffect(() => {
+    if (params?.data) {
+      setCodigoBarras(params.data as string);
+    }
+  }, [params?.data]);
+
   const editar = async () => {
     if (!nombre.trim() || !codigo.trim() || categoriaSeleccionada === null) {
       Alert.alert("Error", "Todos los campos y la categoría son obligatorios.");
@@ -130,18 +149,19 @@ export default function editarProducto() {
     try {
       const isUnique = await ProductRepository.isCodigoUnique(
         codigo,
-        Number(id)
+        Number(idRef.current)
       );
       if (!isUnique) {
         Alert.alert("Error", "El codigo ya existe.");
         return;
       }
       await ProductRepository.update(
-        Number(id),
+        Number(idRef.current),
         nombre,
         Number(precio),
         Number(stock),
         codigo,
+        codigoBarras,
         categoriaSeleccionada,
         imagen,
         info_relevante
@@ -199,6 +219,26 @@ export default function editarProducto() {
         ) : null}
 
         <View style={styles.barcodeContanier}>
+          <Text style={{ fontWeight: "bold", fontSize: 16 }}>
+            Código de Barras generado para el producto:
+          </Text>
+          <View style={styles.barcodeButtons}>
+            <Pressable
+              style={styles.scanButton}
+              onPress={() => generarCodigoBarras("scan")}
+            >
+              <Ionicons name="scan" size={24} color="white" />
+              <Text style={styles.scanButtonText}>Scan</Text>
+            </Pressable>
+            <Pressable
+              style={styles.scanButton}
+              onPress={() => generarCodigoBarras()}
+            >
+              <FontAwesome name="gear" size={24} color="white" />
+              <Text style={styles.scanButtonText}>Auto</Text>
+            </Pressable>
+          </View>
+
           <Text style={{ fontWeight: "bold", fontSize: 16 }}>
             Código de Barras asignado para el producto:
           </Text>
@@ -259,6 +299,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 8,
     paddingBottom: 10,
+  },
+  barcodeButtons: {
+    flexDirection: "row",
+    marginTop: 10,
+    alignItems: "center",
+    paddingBottom: 10,
+  },
+  scanButton: {
+    backgroundColor: "#0ab546",
+    padding: 10,
+    marginRight: 20,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  scanButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   buttonImaje: {
     fontSize: 22,

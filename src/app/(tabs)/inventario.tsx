@@ -26,7 +26,7 @@ interface Producto {
   categoria_nombre?: string;
 }
 
-interface Categoria {
+export interface Categoria {
   id: number;
   nombre: string;
 }

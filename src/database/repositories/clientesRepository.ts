@@ -37,8 +37,8 @@ export const clientesRepository = {
   },
   async update(id: number, nombre: string, ruc: string, telefono: string) {
     return (await db).runAsync(
-      "UPDATE clientes SET nombre=?,telefono=? WHERE id=?",
-      [nombre, telefono, id]
+      "UPDATE clientes SET nombre=?, ruc=?, telefono=? WHERE id=?",
+      [nombre, ruc, telefono, id]
     );
   },
 };

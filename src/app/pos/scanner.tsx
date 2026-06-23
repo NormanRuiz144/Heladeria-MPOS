@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, Alert, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { router, useLocalSearchParams } from "expo-router";
+import { RelativePathString, router, useLocalSearchParams } from "expo-router";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { Product } from "../movimientos/crear";
 import { useCartStore } from "../../store/cartStore";
@@ -15,6 +15,9 @@ const Scanner = () => {
   const addItem = useCartStore((state) => state.addItem);
   const params = useLocalSearchParams();
   const modo = params?.modo || "scan";
+  // necesario para volver al apartado anterior
+  console.log("Apartado anterior:", params?.apartado);
+  const path = "/productos/" + params?.apartado;
 
   // Solicitar permisos al montar el componente
   useEffect(() => {
@@ -94,7 +97,7 @@ const Scanner = () => {
           `Código: ${data}`
         );
         router.dismissTo({
-          pathname: "/productos/crear",
+          pathname: path as RelativePathString,
           params: { data: data },
         });
       } else {
