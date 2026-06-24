@@ -12,7 +12,8 @@ type SaleCardProps = {
     metodos_pago: MetodoPagoItem[],
     total: number,
     subtotal?: number,
-    impuestoAmount?: number
+    impuestoAmount?: number,
+    id_cliente?: number | null
   ) => void;
 } & ComponentProps<typeof Pressable>;
 
@@ -87,7 +88,7 @@ export default function SalesCard({
             <Text style={{ fontSize: 15, fontWeight: "bold" }}>Imprimir</Text>
             <Pressable
               onPress={() =>
-                printVoucher(item.id, item.metodos_pago, item.total, item.subtotal, item.impuesto_amount)
+                printVoucher(item.id, item.metodos_pago, item.total, item.subtotal, item.impuesto_amount, item.id_cliente)
               }
             >
               <FontAwesome5 name="print" size={24} color="black" />

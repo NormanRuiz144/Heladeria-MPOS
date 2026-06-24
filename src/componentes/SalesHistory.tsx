@@ -18,6 +18,10 @@ import { CartItem, PaymentMethod, PaymentType } from "../store/cartStore";
 import { Product } from "../app/movimientos/crear";
 import { PrintTicket, PrintInvoice } from "../print_service/Print";
 import PrintOptionsModal from "./PrintOptionsModal";
+import {
+  Cliente,
+  clientesRepository,
+} from "../database/repositories/clientesRepository";
 
 export interface MetodoPagoItem {
   id: number;
@@ -36,6 +40,7 @@ export interface IVenta {
   cambio: number;
   estado: boolean;
   metodos_pago: MetodoPagoItem[];
+  id_cliente?: number;
 }
 
 interface ISaleDetail {
@@ -101,7 +106,8 @@ export default function SalesHistory() {
     metodos_pago: MetodoPagoItem[],
     total: number,
     subtotal?: number,
-    impuestoAmount?: number
+    impuestoAmount?: number,
+    id_cliente?: number | null
   ) => {
     const listaDetails = await cargarDetalles(id);
     let listaProductsSaled: Array<CartItem> = [];
@@ -126,6 +132,11 @@ export default function SalesHistory() {
       type: mp.metodo_pago as PaymentType,
       amount: mp.monto,
     }));
+    const cliente =
+      id_cliente !== null
+        ? ((await clientesRepository.getById(id_cliente)) as Cliente)
+        : { id: 0, nombre: "Cliente de normal", numero: "", ruc: "" };
+    console.log(cliente);
     setSelectedPrintData({
       items: listaProductsSaled,
       payments,
@@ -133,6 +144,7 @@ export default function SalesHistory() {
       subtotal,
       impuestoAmount,
       numSale: id,
+      clienteInfo: cliente,
     });
     setShowPrintModal(true);
   };
@@ -147,7 +159,8 @@ export default function SalesHistory() {
           selectedPrintData.total,
           selectedPrintData.numSale,
           selectedPrintData.subtotal,
-          selectedPrintData.impuestoAmount
+          selectedPrintData.impuestoAmount,
+          selectedPrintData.clienteInfo
         );
       } else {
         await PrintInvoice(
@@ -156,7 +169,8 @@ export default function SalesHistory() {
           selectedPrintData.total,
           selectedPrintData.numSale,
           selectedPrintData.subtotal,
-          selectedPrintData.impuestoAmount
+          selectedPrintData.impuestoAmount,
+          selectedPrintData.clienteInfo
         );
       }
       setSelectedPrintData(null);

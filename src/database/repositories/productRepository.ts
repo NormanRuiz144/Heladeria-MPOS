@@ -1,10 +1,14 @@
 import { db } from "../database";
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from "expo-file-system/legacy";
 
 export const ProductRepository = {
   async getAll() {
     const database = await db;
-    return database.getAllAsync("SELECT * FROM productos");
+    return database.getAllAsync(`
+      SELECT p.*, c.nombre as categoria_nombre 
+      FROM productos p 
+      LEFT JOIN categorias c ON p.categoria_id = c.id
+    `);
   },
 
   async getById(id: number) {
@@ -12,35 +16,66 @@ export const ProductRepository = {
     return database.getFirstAsync("SELECT * FROM productos WHERE id = ?", [id]);
   },
 
-  async search(term: string) {
+  async search(term: string, cat?: number) {
     const database = await db;
     const like = `%${term}%`;
-    return database.getAllAsync(
-      `SELECT * FROM productos WHERE nombre LIKE ? OR codigo LIKE ?`,
-      [like, like]
-    );
+    const parms = cat ? [cat, like, like] : [like, like];
+    const query = cat
+      ? `SELECT * FROM productos WHERE categoria_id = ? AND nombre LIKE ? OR codigo LIKE ? `
+      : `SELECT * FROM productos WHERE nombre LIKE ? OR codigo LIKE ?`;
+    return database.getAllAsync(query, parms);
   },
 
-  async create(nombre: string, precio: number, stock: number, codigo: string, imagen: string, info_relevante: string) {
+  async create(
+    nombre: string,
+    precio: number,
+    stock: number,
+    codigo: string,
+    codigoBarras: string,
+    categoria_id: number,
+    imagen: string,
+    info_relevante: string
+  ) {
     const database = await db;
     return database.runAsync(
-      "INSERT INTO productos (nombre,precio,stock,codigo,imagen,info_relevante) VALUES (?,?,?,?,?,?)",
-      [nombre, precio, stock, codigo, imagen, info_relevante]
+      "INSERT INTO productos (nombre,precio,stock,codigo,codigo_barras,categoria_id,imagen,info_relevante) VALUES (?,?,?,?,?,?,?,?)",
+      [
+        nombre,
+        precio,
+        stock,
+        codigo,
+        codigoBarras,
+        categoria_id,
+        imagen,
+        info_relevante,
+      ]
     );
   },
-  async update( 
+  async update(
     id: number,
     nombre: string,
     precio: number,
     stock: number,
     codigo: string,
+    codigoBarras: string,
+    categoria_id: number,
     imagen: string,
-    info_relevante:string
+    info_relevante: string
   ) {
     const database = await db;
     return database.runAsync(
-      "UPDATE productos SET nombre=?,precio=?,stock=?,codigo=?,imagen=?,info_relevante=? WHERE id=?",
-      [nombre, precio, stock, codigo,imagen,info_relevante, id]
+      "UPDATE productos SET nombre=?,precio=?,stock=?,codigo=?,codigo_barras=?, categoria_id = ?,imagen=?,info_relevante=? WHERE id=?",
+      [
+        nombre,
+        precio,
+        stock,
+        codigo,
+        codigoBarras,
+        categoria_id,
+        imagen,
+        info_relevante,
+        id,
+      ]
     );
   },
 
@@ -75,5 +110,11 @@ export const ProductRepository = {
     return (result as any).count === 0;
   },
 
-  
+  async searchByCodigoBarras(codigoBarras: string) {
+    const database = await db;
+    return database.getFirstAsync(
+      "SELECT * FROM productos WHERE codigo_barras = ?",
+      [codigoBarras]
+    );
+  },
 };

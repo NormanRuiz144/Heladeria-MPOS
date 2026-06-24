@@ -5,6 +5,7 @@ import { PaymentMethod } from "../store/cartStore";
 import { Alert } from "react-native";
 import { empresaRepository } from "../database/repositories/empresaRepository";
 import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
+import { Cliente } from "../database/repositories/clientesRepository";
 
 export const PrintTicket = async (
   items: CartItem[],
@@ -13,6 +14,7 @@ export const PrintTicket = async (
   numSale: number,
   subtotal?: number,
   impuestoAmount?: number,
+  clienteInfo?: Cliente
 ) => {
   try {
     let productFormat: string = "";
@@ -71,7 +73,8 @@ export const PrintTicket = async (
     </head>
     <body>
         <div class="header">
-        <h1>MBPos Venta #${numSale}</h1>        
+        <h1>MBPos Venta #${numSale}</h1>  
+        <span>Nombre del Cliente: ${clienteInfo.nombre}</span>      
         </div>
         <div class="divider"></div>
         ${productFormat}
@@ -91,8 +94,7 @@ export const PrintTicket = async (
           ` : ``}
           <div class="summary-total">
             <span>TOTAL</span>
-            <span>C$ ${total}</span>
-            
+            <span>C$ ${total.toFixed(2)}</span>
           </div>
           ${cambio > 0 ? `<div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;"><span>CAMBIO</span><span>C$ ${cambio.toFixed(2)}</span></div>` : ``}
         </div>
@@ -119,6 +121,7 @@ export const PrintInvoice = async (
   numSale: number,
   subtotal?: number,
   impuestoAmount?: number,
+  clienteInfo?: Cliente
 ) => {
   try {
     let productRows = "";
@@ -227,8 +230,8 @@ export const PrintInvoice = async (
             </div>
             <div>
                 <h3>Cliente</h3>
-                <p><strong>Consumidor Final</strong></p>
-            </div>
+                <p><strong>${clienteInfo.nombre}</strong></p>
+              </div>
         </div>
 
         <table>
@@ -306,7 +309,7 @@ export const PrintInvoice = async (
 };
 
 export const PrintSalesReport = async (
-  sales: any[],
+  sales: any[], // Esta lista ahora contiene objetos combinados con la propiedad 'tipo'
   totalPeriodo: number,
   startDate: string,
   endDate: string
@@ -330,17 +333,30 @@ export const PrintSalesReport = async (
 
     // Generamos las filas de la tabla de ventas
     let rowsFormat = "";
-    sales.forEach((sale) => {
-      rowsFormat += `
-        <tr>
-          <td>#${sale.id}</td>
-          <td>${sale.fecha.split(" ")[0]}</td>
-          <td>${sale.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
-          <td style="color: ${sale.estado ? "red" : "black"}">
-            ${sale.estado ? "ANULADA" : "C$ " + sale.total.toFixed(2)}
-          </td>
-        </tr>
-      `;
+    sales.forEach((item) => {
+      if (item.tipo === "venta") {
+        // Formato para ventas normales
+        rowsFormat += `
+          <tr>
+            <td>#${item.id}</td>
+            <td>${item.fecha.split(" ")[0]}</td>
+            <td>${item.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
+            <td style="color: ${item.estado ? "red" : "black"}">
+              ${item.estado ? "ANULADA" : "C$ " + item.total.toFixed(2)}
+            </td>
+          </tr>
+        `;
+      } else {
+        // Formato para ventas extras
+        rowsFormat += `
+          <tr style="background-color: #fff9f0;">
+            <td>EXTRA</td>
+            <td>${item.fecha.split(" ")[0]}</td>
+            <td>${item.descripcion} (${item.motivo})</td>
+            <td>C$ ${item.monto.toFixed(2)}</td>
+          </tr>
+        `;
+      }
     });
 
     const reportHtml = `
@@ -355,17 +371,14 @@ export const PrintSalesReport = async (
         th { background-color: #0ab546; color: white; padding: 10px; text-align: left; }
         td { border-bottom: 1px solid #ddd; padding: 10px; font-size: 12px; }
         .total-section { margin-top: 30px; text-align: right; }
-        /* Dentro del string reportHtml en Print.ts */
-        .total-box {    display: inline-block;   background: #1a1a1a;   color: white;   padding: 15px 40px; /* Más espacio a los lados */
-        border-radius: 50px; /* Redondeado total (estilo píldora) */
-       border: 2px solid #0ab546; /* Un borde verde para que resalte en el PDF */
-      text-align: center;}
+        .total-box { display: inline-block; background: #1a1a1a; color: white; padding: 15px 40px; 
+        border-radius: 50px; border: 2px solid #0ab546; text-align: center;}
         .footer { margin-top: 50px; text-align: center; font-size: 10px; color: #888; }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="title">${empresaNombre} - REPORTE DE VENTAS</div>
+        <div class="title">${empresaNombre} - REPORTE DE VENTAS Y EXTRAS</div>
         ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="width: 80px; height: 80px; object-fit: contain; margin-top: 8px; margin-bottom: 8px;" />` : ""}
         ${empresaDireccion ? `<p style="margin: 2px 0; font-size: 12px; color: #555;">${empresaDireccion}</p>` : ""}
       </div>
@@ -378,9 +391,9 @@ export const PrintSalesReport = async (
       <table>
         <thead>
           <tr>
-            <th>Número Venta</th>
+            <th>ID / Tipo</th>
             <th>Fecha</th>
-            <th>Método</th>
+            <th>Detalle / Método</th>
             <th>Monto</th>
           </tr>
         </thead>
@@ -409,6 +422,6 @@ export const PrintSalesReport = async (
       await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
     }
   } catch (error) {
-    Alert.alert("Error", "No se pudo generar el reporte PDF");
+    Alert.alert("Error", "No se pudo generar el reporte PDF: " + error);
   }
 };

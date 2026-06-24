@@ -36,7 +36,9 @@ interface CartState {
   impuestoAmount: number;
   impuestoRate: number;
   payments: PaymentMethod[];
+  clientId: number | null;
   setPayments: (payments: PaymentMethod[]) => void;
+  setClientId: (id: number | null) => void;
   addItem: (product: Product) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
@@ -51,6 +53,8 @@ export const useCartStore = create<CartState>((set, get) => ({
   impuestoAmount: 0,
   impuestoRate: 0,
   payments: [],
+  clientId: null,
+  setClientId: (id) => set({ clientId: id }),
   addItem: async (product, quantity = 1) => {
     const { items, calcularTotal } = get();
     const exists = items.some((item) => item.product.id === product.id);
@@ -104,6 +108,6 @@ export const useCartStore = create<CartState>((set, get) => ({
     set({ subtotal, impuestoAmount, total, impuestoRate: rate });
   },
   clearCart: () => {
-    set({ items: [], total: 0, subtotal: 0, impuestoAmount: 0, impuestoRate: 0, payments: [] });
+    set({ items: [], total: 0, subtotal: 0, impuestoAmount: 0, impuestoRate: 0, payments: [], clientId: null });
   },
 }));

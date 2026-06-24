@@ -1,10 +1,19 @@
-import { Alert, Button, FlatList, StyleSheet, Text, View } from "react-native";
-import React, { useCallback, useEffect, useState } from "react";
+import {
+  Alert,
+  Button,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import React, { useCallback, useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ProductCard } from "../../componentes/ProductCard";
 import { push } from "expo-router/build/global-state/routing";
 import { router, useFocusEffect } from "expo-router";
+import { CategoriaRepository } from "../../database/repositories/categoriaRepository";
 
 interface Producto {
   id: number;
@@ -12,19 +21,34 @@ interface Producto {
   precio: number;
   stock: number;
   codigo: string;
+  codigo_barras: string;
+  categoria_id: number;
+  categoria_nombre?: string;
+}
+
+export interface Categoria {
+  id: number;
+  nombre: string;
 }
 
 const inventario = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null);
 
-  const loadProductos = async () => {
-    const data = (await ProductRepository.getAll()) as Producto[];
+  const loadData = async () => {
+    const [data, cats] = await Promise.all([
+      ProductRepository.getAll() as Promise<Producto[]>,
+      CategoriaRepository.getAll() as Promise<Categoria[]>,
+    ]);
+    console.log(data);
     setProductos(data);
+    setCategorias(cats);
   };
-  const crearProducto = () => {
-    ProductRepository.create("Pepsi", 25, 10, "15151515");
-    console.log("Producto creado.");
-  };
+
+  const productosFiltrados = categoriaFiltro
+    ? productos.filter((p) => p.categoria_id === categoriaFiltro)
+    : productos;
 
   const deleteProduct = async (id: number) => {
     Alert.alert(
@@ -38,31 +62,81 @@ const inventario = () => {
           onPress: async () => {
             const product = (await ProductRepository.getById(id)) as any;
             await ProductRepository.delete(id, product?.imagen);
-            loadProductos();
+            // ProductRepository.delete(id);
+            loadData();
           },
         },
       ]
     );
   };
 
-  // se ejecuta cuando recibe el foco en este caso al volver a cargar la pantalla del inventarios
   useFocusEffect(
-    // la funcion la ubica en memoria
     useCallback(() => {
-      loadProductos();
+      loadData();
     }, [])
   );
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Inventario</Text>
-      <Button
-        title="Nuevo producto"
-        onPress={() => {
-          push("/productos/crear");
-        }}
-      />
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Nuevo producto"
+          onPress={() => {
+            push("/productos/crear");
+          }}
+        />
+      </View>
+
+      <View style={styles.filtroContainer}>
+        <FlatList
+          horizontal
+          data={categorias}
+          keyExtractor={(item) => item.id.toString()}
+          showsHorizontalScrollIndicator={false}
+          ListHeaderComponent={
+            <TouchableOpacity
+              style={[
+                styles.chip,
+                categoriaFiltro === null && styles.chipActive,
+              ]}
+              onPress={() => setCategoriaFiltro(null)}
+            >
+              <Text
+                style={
+                  categoriaFiltro === null
+                    ? { color: "white" }
+                    : { color: "#333" }
+                }
+              >
+                Todas
+              </Text>
+            </TouchableOpacity>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.chip,
+                categoriaFiltro === item.id && styles.chipActive,
+              ]}
+              onPress={() => setCategoriaFiltro(item.id)}
+            >
+              <Text
+                style={
+                  categoriaFiltro === item.id
+                    ? { color: "white" }
+                    : { color: "#333" }
+                }
+              >
+                {item.nombre}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+
       <FlatList
-        data={productos}
+        data={productosFiltrados}
         keyExtractor={(item: Producto) => item.id.toString()}
         renderItem={({ item }) => (
           <ProductCard
@@ -71,6 +145,9 @@ const inventario = () => {
             onEdit={(id) => router.push(`/productos/edit?id=${id}`)}
           />
         )}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No hay productos registrados</Text>
+        }
       />
     </SafeAreaView>
   );
@@ -87,5 +164,26 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: "bold",
+  },
+  buttonContainer: {
+    marginBottom: 10,
+  },
+  filtroContainer: {
+    marginBottom: 10,
+  },
+  chip: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    backgroundColor: "#fff",
+    marginRight: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#0ab546",
+  },
+  chipActive: { backgroundColor: "#0ab546" },
+  empty: {
+    textAlign: "center",
+    marginTop: 20,
+    color: "#888",
   },
 });

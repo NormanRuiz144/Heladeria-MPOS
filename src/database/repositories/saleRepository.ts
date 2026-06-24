@@ -5,10 +5,17 @@ export const SaleRepository = {
     const database = await db;
     return database.getAllAsync("SELECT * FROM ventas ORDER BY fecha DESC");
   },
-  async create(total: number, montoPagado: number, cambio: number, subtotal?: number, impuestoAmount?: number) {
+  async create(
+    total: number,
+    montoPagado: number,
+    cambio: number,
+    subtotal?: number,
+    impuestoAmount?: number,
+    id_cliente?: number | null
+  ) {
     return (await db).runAsync(
-      "INSERT INTO ventas (total, monto_pagado, cambio, subtotal, impuesto_amount) VALUES (?, ?, ?, ?, ?)",
-      [total, montoPagado, cambio, subtotal ?? 0, impuestoAmount ?? 0]
+      "INSERT INTO ventas (total, monto_pagado, cambio, subtotal, impuesto_amount, id_cliente) VALUES (?, ?, ?, ?, ?, ?)",
+      [total, montoPagado, cambio, subtotal ?? 0, impuestoAmount ?? 0, id_cliente ?? null]
     );
   },
 
@@ -21,12 +28,10 @@ export const SaleRepository = {
 
   async getReportByDateRange(startDate: string, endDate: string) {
     const database = await db;
-    const start = `${startDate} 00:00:00`;
-    const end = `${endDate} 23:59:59`;
-
+    // Cambiamos a date(fecha) para ignorar la hora y ser consistentes con el reporte de ventas varias
     return database.getAllAsync(
-      "SELECT * FROM ventas WHERE fecha BETWEEN ? AND ? ORDER BY fecha DESC",
-      [start, end]
+      "SELECT * FROM ventas WHERE date(fecha) BETWEEN ? AND ? ORDER BY fecha DESC",
+      [startDate, endDate]
     );
   },
 };

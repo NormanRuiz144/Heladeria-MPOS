@@ -11,6 +11,10 @@ import { SaleRepository } from "../database/repositories/saleRepository";
 import { SaleDetailRepository } from "../database/repositories/saleDetailRepository";
 import { PrintTicket, PrintInvoice } from "../print_service/Print";
 import PrintOptionsModal from "./PrintOptionsModal";
+import {
+  Cliente,
+  clientesRepository,
+} from "../database/repositories/clientesRepository";
 
 export default function ProcessSale() {
   const items = useCartStore((state) => state.items);
@@ -19,14 +23,13 @@ export default function ProcessSale() {
   const impuestoAmount = useCartStore((state) => state.impuestoAmount);
   const clearCart = useCartStore((state) => state.clearCart);
   const payments = useCartStore((state) => state.payments);
+  const clientId = useCartStore((state) => state.clientId);
   const isProcessing = useRef(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showPrintModal, setShowPrintModal] = useState(false);
   const [saleData, setSaleData] = useState<any>(null);
 
-  const handlePrintSelect = async (
-    option: "ticket" | "invoice"
-  ) => {
+  const handlePrintSelect = async (option: "ticket" | "invoice") => {
     setShowPrintModal(false);
     if (saleData) {
       if (option === "ticket") {
@@ -36,7 +39,8 @@ export default function ProcessSale() {
           saleData.total,
           saleData.numSale,
           saleData.subtotal,
-          saleData.impuestoAmount
+          saleData.impuestoAmount,
+          saleData.cliente
         );
       } else {
         await PrintInvoice(
@@ -45,7 +49,8 @@ export default function ProcessSale() {
           saleData.total,
           saleData.numSale,
           saleData.subtotal,
-          saleData.impuestoAmount
+          saleData.impuestoAmount,
+          saleData.cliente
         );
       }
       setSaleData(null);
@@ -78,7 +83,8 @@ export default function ProcessSale() {
             montoPagado,
             cambio,
             subtotal,
-            impuestoAmount
+            impuestoAmount,
+            clientId
           );
 
           for (const payment of payments) {
@@ -110,6 +116,11 @@ export default function ProcessSale() {
             );
           }
 
+          const clienteInfo =
+            clientId !== null
+              ? ((await clientesRepository.getById(clientId)) as Cliente)
+              : { id: 0, nombre: "Cliente de normal", numero: "", ruc: "" };
+
           await database.execAsync("COMMIT");
 
           setShowPayment(false);
@@ -121,6 +132,7 @@ export default function ProcessSale() {
             subtotal,
             impuestoAmount,
             numSale: resultsale.lastInsertRowId,
+            cliente: clienteInfo,
           });
           setShowPrintModal(true);
           clearCart();
