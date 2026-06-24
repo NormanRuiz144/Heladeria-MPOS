@@ -29,6 +29,8 @@ export interface MetodoPagoItem {
 export interface IVenta {
   id: number;
   total: number;
+  subtotal: number;
+  impuesto_amount: number;
   fecha: string;
   monto_pagado: number;
   cambio: number;
@@ -97,7 +99,9 @@ export default function SalesHistory() {
   const printVoucher = async (
     id: number,
     metodos_pago: MetodoPagoItem[],
-    total: number
+    total: number,
+    subtotal?: number,
+    impuestoAmount?: number
   ) => {
     const listaDetails = await cargarDetalles(id);
     let listaProductsSaled: Array<CartItem> = [];
@@ -126,6 +130,8 @@ export default function SalesHistory() {
       items: listaProductsSaled,
       payments,
       total,
+      subtotal,
+      impuestoAmount,
       numSale: id,
     });
     setShowPrintModal(true);
@@ -139,14 +145,18 @@ export default function SalesHistory() {
           selectedPrintData.items,
           selectedPrintData.payments,
           selectedPrintData.total,
-          selectedPrintData.numSale
+          selectedPrintData.numSale,
+          selectedPrintData.subtotal,
+          selectedPrintData.impuestoAmount
         );
       } else {
         await PrintInvoice(
           selectedPrintData.items,
           selectedPrintData.payments,
           selectedPrintData.total,
-          selectedPrintData.numSale
+          selectedPrintData.numSale,
+          selectedPrintData.subtotal,
+          selectedPrintData.impuestoAmount
         );
       }
       setSelectedPrintData(null);

@@ -4,13 +4,15 @@ import { CartItem } from "../store/cartStore";
 import { PaymentMethod } from "../store/cartStore";
 import { Alert } from "react-native";
 import { empresaRepository } from "../database/repositories/empresaRepository";
+import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
 
 export const PrintTicket = async (
   items: CartItem[],
   payments: PaymentMethod[],
   total: number,
   numSale: number,
-  aplicarImp?: boolean
+  subtotal?: number,
+  impuestoAmount?: number,
 ) => {
   try {
     let productFormat: string = "";
@@ -23,14 +25,6 @@ export const PrintTicket = async (
         </div>
       `;
     }
-
-    let impuesto;
-    // if (aplicarImp) {
-    impuesto = (await empresaRepository.getById(1)) as any;
-    console.log(impuesto.impuesto);
-    // console.log(aplicarImp);
-    // }
-    let totalImpuesto = total * impuesto.impuesto;
 
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
     const soloEfectivo = payments.every((p) => p.type === "efectivo");
@@ -85,9 +79,19 @@ export const PrintTicket = async (
         <div class="summary">
           <strong>PAGOS:</strong>
           ${paymentsFormat}
+          ${impuestoAmount !== undefined ? `
+          <div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;">
+            <span>SUBTOTAL</span>
+            <span>C$ ${(subtotal ?? total).toFixed(2)}</span>
+          </div>
+          <div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;">
+            <span>IMPUESTO</span>
+            <span>C$ ${impuestoAmount.toFixed(2)}</span>
+          </div>
+          ` : ``}
           <div class="summary-total">
             <span>TOTAL</span>
-            <span>C$ ${total + totalImpuesto}</span>
+            <span>C$ ${total}</span>
             
           </div>
           ${cambio > 0 ? `<div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;"><span>CAMBIO</span><span>C$ ${cambio.toFixed(2)}</span></div>` : ``}
@@ -112,7 +116,9 @@ export const PrintInvoice = async (
   items: CartItem[],
   payments: PaymentMethod[],
   total: number,
-  numSale: number
+  numSale: number,
+  subtotal?: number,
+  impuestoAmount?: number,
 ) => {
   try {
     let productRows = "";
@@ -260,6 +266,20 @@ export const PrintInvoice = async (
                 `
                     : ""
                 }
+                ${
+                  impuestoAmount !== undefined
+                    ? `
+                <tr>
+                    <td style="text-align: right;"><strong>Subtotal:</strong></td>
+                    <td style="text-align: right;">C$ ${(subtotal ?? total).toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;"><strong>Impuesto:</strong></td>
+                    <td style="text-align: right;">C$ ${impuestoAmount.toFixed(2)}</td>
+                </tr>
+                `
+                    : ""
+                }
                 <tr>
                     <td style="text-align: right;"><strong>TOTAL:</strong></td>
                     <td style="text-align: right;">C$ ${total.toFixed(2)}</td>
@@ -292,6 +312,22 @@ export const PrintSalesReport = async (
   endDate: string
 ) => {
   try {
+    const empresa = await empresaRepository.getFirst();
+    const empresaNombre = empresa?.nombre || "MBPos";
+    const empresaDireccion = empresa?.direccion || "";
+    const empresaLogo = empresa?.logo || "";
+    let logoSrc = "";
+    if (empresaLogo) {
+      try {
+        const base64 = await readAsStringAsync(empresaLogo, {
+          encoding: EncodingType.Base64,
+        });
+        logoSrc = `data:image/jpeg;base64,${base64}`;
+      } catch (e) {
+        console.log("Error leyendo logo:", e);
+      }
+    }
+
     // Generamos las filas de la tabla de ventas
     let rowsFormat = "";
     sales.forEach((sale) => {
@@ -329,7 +365,9 @@ export const PrintSalesReport = async (
     </head>
     <body>
       <div class="header">
-        <div class="title">MBPos - REPORTE DE VENTAS</div>
+        <div class="title">${empresaNombre} - REPORTE DE VENTAS</div>
+        ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="width: 80px; height: 80px; object-fit: contain; margin-top: 8px; margin-bottom: 8px;" />` : ""}
+        ${empresaDireccion ? `<p style="margin: 2px 0; font-size: 12px; color: #555;">${empresaDireccion}</p>` : ""}
       </div>
       
       <div class="info">

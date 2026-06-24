@@ -177,9 +177,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
     color: "#1a1a1a",
+    marginBottom: 15,
   },
   filterContainer: {
     backgroundColor: "#fff",

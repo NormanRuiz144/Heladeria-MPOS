@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Product } from "../app/movimientos/crear";
+import { empresaRepository } from "../database/repositories/empresaRepository";
 
 export interface CartItem {
   product: Product;
@@ -31,20 +32,26 @@ export interface PaymentMethod {
 interface CartState {
   items: CartItem[];
   total: number;
+  subtotal: number;
+  impuestoAmount: number;
+  impuestoRate: number;
   payments: PaymentMethod[];
   setPayments: (payments: PaymentMethod[]) => void;
   addItem: (product: Product) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
-  calcularTotal: () => void;
+  calcularTotal: () => Promise<void>;
   clearCart: () => void;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   total: 0,
+  subtotal: 0,
+  impuestoAmount: 0,
+  impuestoRate: 0,
   payments: [],
-  addItem: (product, quantity = 1) => {
+  addItem: async (product, quantity = 1) => {
     const { items, calcularTotal } = get();
     const exists = items.some((item) => item.product.id === product.id);
     const updatedItems = exists
@@ -55,15 +62,15 @@ export const useCartStore = create<CartState>((set, get) => ({
         )
       : [...items, { product, quantity }];
     set({ items: updatedItems });
-    calcularTotal();
+    await calcularTotal();
   },
-  removeItem: (productId) => {
+  removeItem: async (productId) => {
     const { items, calcularTotal } = get();
     const updatedItems = items.filter((item) => item.product.id !== productId);
     set({ items: updatedItems });
-    calcularTotal();
+    await calcularTotal();
   },
-  updateQuantity: (productId, quantity) => {
+  updateQuantity: async (productId, quantity) => {
     const { items, calcularTotal } = get();
     if (quantity <= 0) {
       const updatedItems = items.filter(
@@ -76,18 +83,27 @@ export const useCartStore = create<CartState>((set, get) => ({
       );
       set({ items: updatedItems });
     }
-    calcularTotal();
+    await calcularTotal();
   },
   setPayments: (payments) => set({ payments: payments }),
-  calcularTotal: () => {
-    const { items } = get();
-    const totalCalculado = items.reduce(
-      (sum, item) => (sum += item.product.precio * item.quantity),
+  calcularTotal: async () => {
+    const { items, impuestoRate } = get();
+    let rate = impuestoRate;
+    if (rate === 0) {
+      try {
+        const empresa = await empresaRepository.getFirst();
+        rate = empresa?.impuesto || 0;
+      } catch {}
+    }
+    const subtotal = items.reduce(
+      (sum, item) => sum + item.product.precio * item.quantity,
       0
     );
-    set({ total: totalCalculado });
+    const impuestoAmount = subtotal * (rate / 100);
+    const total = subtotal + impuestoAmount;
+    set({ subtotal, impuestoAmount, total, impuestoRate: rate });
   },
   clearCart: () => {
-    set({ items: [], total: 0, payments: [] });
+    set({ items: [], total: 0, subtotal: 0, impuestoAmount: 0, impuestoRate: 0, payments: [] });
   },
 }));

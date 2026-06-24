@@ -40,6 +40,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="empresa"
+        options={{
+          title: "Empresa",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="business" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

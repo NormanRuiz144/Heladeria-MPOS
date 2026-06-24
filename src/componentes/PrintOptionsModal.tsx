@@ -13,7 +13,7 @@ import { CartItem, PaymentMethod, PAYMENT_CONFIG } from "../store/cartStore";
 interface PrintOptionsModalProps {
   visible: boolean;
   onClose: () => void;
-  onSelectOption: (option: "ticket" | "invoice", aplicarImp?: boolean) => void;
+  onSelectOption: (option: "ticket" | "invoice") => void;
   saleData?: {
     items: CartItem[];
     payments: PaymentMethod[];
@@ -87,14 +87,6 @@ export default function PrintOptionsModal({
           <Text style={styles.subtitle}>
             ¿En qué formato deseas imprimir el comprobante?
           </Text>
-          <View>
-            <CustomButton
-              iconName=""
-              title="Aplicar impuesto"
-              onPress={() => onSelectOption("ticket", true)}
-            />
-          </View>
-
           <View style={styles.buttonsContainer}>
             <CustomButton
               iconName="receipt"

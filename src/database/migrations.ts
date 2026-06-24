@@ -45,8 +45,11 @@ export const runMigrations = async () => {
       );
       
       CREATE TABLE IF NOT EXISTS empresa (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,      
-      impuesto REAL NOT NULL
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      impuesto REAL NOT NULL DEFAULT 0,
+      logo TEXT,
+      nombre TEXT,
+      direccion TEXT
       );
     `);
 
@@ -85,6 +88,22 @@ try {
         "ALTER TABLE ventas ADD COLUMN estado BOOLEAN DEFAULT false"
       );
     } catch {}
+    try {
+      await database.runAsync(
+        "ALTER TABLE ventas ADD COLUMN subtotal REAL;"
+      );
+      console.log("Columna 'subtotal' verificada/añadida con éxito.");
+    } catch {
+      console.log("La columna 'subtotal' ya existía o no se pudo crear.");
+    }
+    try {
+      await database.runAsync(
+        "ALTER TABLE ventas ADD COLUMN impuesto_amount REAL;"
+      );
+      console.log("Columna 'impuesto_amount' verificada/añadida con éxito.");
+    } catch {
+      console.log("La columna 'impuesto_amount' ya existía o no se pudo crear.");
+    }
 
     try {
       await database.runAsync(`
@@ -97,6 +116,16 @@ try {
 
     try {
       await database.runAsync("ALTER TABLE ventas DROP COLUMN metodo_pago");
+    } catch {}
+
+    try {
+      await database.runAsync("ALTER TABLE empresa ADD COLUMN logo TEXT;");
+    } catch {}
+    try {
+      await database.runAsync("ALTER TABLE empresa ADD COLUMN nombre TEXT;");
+    } catch {}
+    try {
+      await database.runAsync("ALTER TABLE empresa ADD COLUMN direccion TEXT;");
     } catch {}
   } catch (error) {
     console.log("Migration error:", error);

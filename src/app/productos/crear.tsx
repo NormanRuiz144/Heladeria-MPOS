@@ -1,5 +1,6 @@
-import { Alert, Button, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Button, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialIcons } from "@expo/vector-icons";
 import InputField from "./InputField";
 import { useState } from "react";
 import { ProductRepository } from "../../database/repositories/productRepository";
@@ -13,6 +14,7 @@ export default function CrearProductos() {
   const [codigo, setCodigo] = useState("");
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
+  const [showPicker, setShowPicker] = useState(false);
 
 
   
@@ -46,24 +48,8 @@ export default function CrearProductos() {
     return true;
   };
 
-// Imagenes 
-  const manejarSeleccionImagen = async () => {
-    const permisos = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permisos.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos.');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-    });
-
-    if (result.canceled) return;
-
-    const uriOriginal = result.assets[0].uri;
+// Imagenes
+  const procesarImagenSeleccionada = async (uriOriginal: string) => {
     const nombreArchivo = `producto_${Date.now()}.jpg`;
     if (!FileSystem.documentDirectory) {
       Alert.alert("Error", "No se pudo acceder al directorio de documentos");
@@ -72,6 +58,44 @@ export default function CrearProductos() {
     const rutaPermanente = `${FileSystem.documentDirectory}${nombreArchivo}`;
     await FileSystem.copyAsync({ from: uriOriginal, to: rutaPermanente });
     setImagen(rutaPermanente);
+  };
+
+  const manejarSeleccionImagen = () => {
+    setShowPicker(true);
+  };
+
+  const seleccionarGaleria = async () => {
+    setShowPicker(false);
+    const permisos = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permisos.granted) {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+    });
+    if (result.canceled) return;
+    await procesarImagenSeleccionada(result.assets[0].uri);
+  };
+
+  const tomarFoto = async () => {
+    setShowPicker(false);
+    const permisos = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permisos.granted) {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+    });
+    if (result.canceled) return;
+    await procesarImagenSeleccionada(result.assets[0].uri);
   }
 
 
@@ -129,7 +153,7 @@ export default function CrearProductos() {
       <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
      
      <TouchableOpacity style={styles.buttonImaje} onPress={manejarSeleccionImagen}>
-     <Text style={styles.buttonText}>Seleccionar Imagen</Text>
+     <Text style={styles.buttonText}>Agregar Imagen</Text>
      </TouchableOpacity>
       {imagen ? (
         <View style={styles.imagePreviewContainer}>
@@ -146,12 +170,27 @@ export default function CrearProductos() {
      <TouchableOpacity style={styles.buttonImaje} onPress={guardar}>
      <Text style={styles.buttonText}>Guardar</Text>
      </TouchableOpacity>
-      
 
-    
-
-
-   
+      <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
+        <Pressable style={styles.overlay} onPress={() => setShowPicker(false)}>
+          <Pressable style={styles.pickerContainer} onPress={() => {}}>
+            <Text style={styles.pickerTitle}>¿De dónde obtener la imagen?</Text>
+            <View style={styles.pickerRow}>
+              <TouchableOpacity style={styles.pickerBtnLeft} onPress={tomarFoto}>
+                <MaterialIcons name="camera-alt" size={20} color="#fff" />
+                <Text style={styles.pickerBtnText}> Tomar foto</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.pickerBtnRight} onPress={seleccionarGaleria}>
+                <MaterialIcons name="photo-library" size={20} color="#fff" />
+                <Text style={styles.pickerBtnText}> Galería</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.pickerCancel} onPress={() => setShowPicker(false)}>
+              <Text style={styles.pickerCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -204,6 +243,65 @@ const styles = StyleSheet.create({
   imageDismissText: {
     color: "white",
     fontWeight: "bold",
+    fontSize: 14,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pickerContainer: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 24,
+    width: "85%",
+    alignItems: "center",
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  pickerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 12,
+  },
+  pickerBtnLeft: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "#1a1a1a",
+    paddingVertical: 14,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pickerBtnRight: {
+    flex: 1,
+    flexDirection: "row",
+    backgroundColor: "#0ab546",
+    paddingVertical: 14,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pickerBtnText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
+  },
+  pickerCancel: {
+    alignSelf: "flex-end",
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  pickerCancelText: {
+    color: "#e53935",
+    fontWeight: "600",
     fontSize: 14,
   },
 });

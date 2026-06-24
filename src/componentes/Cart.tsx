@@ -14,6 +14,8 @@ export default function Cart() {
   // forma para subcribirse a un estado
   const items = useCartStore((state) => state.items);
   const total = useCartStore((state) => state.total);
+  const subtotal = useCartStore((state) => state.subtotal);
+  const impuestoAmount = useCartStore((state) => state.impuestoAmount);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   return (
@@ -52,7 +54,13 @@ export default function Cart() {
           </View>
         )}
       />
-      <Text style={styles.total}>Total: C${total.toFixed(2)} </Text>
+      <View style={styles.totalContainer}>
+        <Text style={styles.totalLine}>Subtotal: C${subtotal.toFixed(2)}</Text>
+        {impuestoAmount > 0 && (
+          <Text style={styles.totalLine}>Impuesto: C${impuestoAmount.toFixed(2)}</Text>
+        )}
+        <Text style={styles.total}>Total: C${total.toFixed(2)}</Text>
+      </View>
     </SafeAreaView>
   );
 }
@@ -84,10 +92,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginHorizontal: 10,
   },
+  totalContainer: {
+    marginTop: 10,
+    paddingHorizontal: 10,
+  },
+  totalLine: {
+    fontSize: 16,
+    textAlign: "right",
+    color: "#555",
+  },
   total: {
     fontSize: 20,
     fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 10,
+    textAlign: "right",
   },
 });

@@ -15,6 +15,8 @@ import PrintOptionsModal from "./PrintOptionsModal";
 export default function ProcessSale() {
   const items = useCartStore((state) => state.items);
   const total = useCartStore((state) => state.total);
+  const subtotal = useCartStore((state) => state.subtotal);
+  const impuestoAmount = useCartStore((state) => state.impuestoAmount);
   const clearCart = useCartStore((state) => state.clearCart);
   const payments = useCartStore((state) => state.payments);
   const isProcessing = useRef(false);
@@ -23,8 +25,7 @@ export default function ProcessSale() {
   const [saleData, setSaleData] = useState<any>(null);
 
   const handlePrintSelect = async (
-    option: "ticket" | "invoice",
-    aplicarImp?: boolean
+    option: "ticket" | "invoice"
   ) => {
     setShowPrintModal(false);
     if (saleData) {
@@ -34,14 +35,17 @@ export default function ProcessSale() {
           saleData.payments,
           saleData.total,
           saleData.numSale,
-          aplicarImp
+          saleData.subtotal,
+          saleData.impuestoAmount
         );
       } else {
         await PrintInvoice(
           saleData.items,
           saleData.payments,
           saleData.total,
-          saleData.numSale
+          saleData.numSale,
+          saleData.subtotal,
+          saleData.impuestoAmount
         );
       }
       setSaleData(null);
@@ -72,7 +76,9 @@ export default function ProcessSale() {
           const resultsale = await SaleRepository.create(
             total,
             montoPagado,
-            cambio
+            cambio,
+            subtotal,
+            impuestoAmount
           );
 
           for (const payment of payments) {
@@ -112,6 +118,8 @@ export default function ProcessSale() {
             payments,
             cambio,
             total,
+            subtotal,
+            impuestoAmount,
             numSale: resultsale.lastInsertRowId,
           });
           setShowPrintModal(true);
