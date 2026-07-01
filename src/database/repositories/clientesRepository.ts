@@ -4,7 +4,7 @@ export interface Cliente {
   id: number;
   nombre: string;
   ruc: string;
-  telefono?: string;
+  telefono: string;
 }
 
 export const clientesRepository = {

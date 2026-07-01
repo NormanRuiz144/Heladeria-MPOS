@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -33,9 +33,12 @@ export default function ProductSearch() {
     setCategorias(categorias);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+      handleSearch(query);
+    }, [])
+  );
   // para agregar al estado gobal
   const handleAddToCart = (product: Product) => {
     addItem(product);
@@ -45,12 +48,17 @@ export default function ProductSearch() {
   // los resultados de la busqueda
   const handleSearch = async (text: string) => {
     setQuery(text);
-    if (text.trim()) {
+    if (text.trim() && isNaN(Number(text))) {
       const matches = (await ProductRepository.search(
-        text.trim(),
-        categoriaFiltro!
+        text.trim()
       )) as Product[];
       setResult(matches);
+    } else if (!isNaN(Number(text))) {
+      setQuery("");
+      const product = (await ProductRepository.getByIdCategoria(
+        Number(text)
+      )) as Product[];
+      setResult(product);
     } else {
       setResult([]);
     }
@@ -79,7 +87,12 @@ export default function ProductSearch() {
         />
         <Pressable
           style={styles.scanButton}
-          onPress={() => router.navigate({ pathname: "/pos/scanner", params: { modo: "scan" } })}
+          onPress={() =>
+            router.navigate({
+              pathname: "/pos/scanner",
+              params: { modo: "scan" },
+            })
+          }
         >
           <Ionicons name="scan" size={24} color="white" />
           <Text style={styles.scanButtonText}>Scan</Text>
@@ -121,6 +134,7 @@ export default function ProductSearch() {
               ]}
               onPress={() => {
                 setCategoriaFiltro(item.id);
+                handleSearch(item.id.toString());
                 console.log(categoriaFiltro);
               }}
             >

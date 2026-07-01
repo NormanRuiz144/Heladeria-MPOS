@@ -11,9 +11,9 @@ type SaleCardProps = {
     id: number,
     metodos_pago: MetodoPagoItem[],
     total: number,
+    id_cliente: number | null,
     subtotal?: number,
-    impuestoAmount?: number,
-    id_cliente?: number | null
+    impuestoAmount?: number
   ) => void;
 } & ComponentProps<typeof Pressable>;
 
@@ -72,8 +72,16 @@ export default function SalesCard({
       </View>
       <Text>Fecha de Venta: {item.fecha}</Text>
       <Text>Monto Pagado: C${item.monto_pagado}</Text>
-      <Text>Subtotal: C${item.subtotal?.toFixed(2) ?? item.total.toFixed(2)}</Text>
-      <Text>Impuesto{(item.subtotal ?? 0) > 0 ? ` (${(((item.impuesto_amount ?? 0) / (item.subtotal ?? 1)) * 100).toFixed(1)}%)` : ''}: C${(item.impuesto_amount ?? 0).toFixed(2)}</Text>
+      <Text>
+        Subtotal: C${item.subtotal?.toFixed(2) ?? item.total.toFixed(2)}
+      </Text>
+      <Text>
+        Impuesto
+        {(item.subtotal ?? 0) > 0
+          ? ` (${(((item.impuesto_amount ?? 0) / (item.subtotal ?? 1)) * 100).toFixed(1)}%)`
+          : ""}
+        : C${(item.impuesto_amount ?? 0).toFixed(2)}
+      </Text>
       <Text>Total: C${item.total}</Text>
 
       {hasEfectivo(item.metodos_pago) && item.cambio > 0 && (
@@ -86,7 +94,14 @@ export default function SalesCard({
             <Text style={{ fontSize: 15, fontWeight: "bold" }}>Imprimir</Text>
             <Pressable
               onPress={() =>
-                printVoucher(item.id, item.metodos_pago, item.total, item.subtotal, item.impuesto_amount, item.id_cliente)
+                printVoucher(
+                  item.id,
+                  item.metodos_pago,
+                  item.total,
+                  item.id_cliente,
+                  item.subtotal,
+                  item.impuesto_amount
+                )
               }
             >
               <FontAwesome5 name="print" size={24} color="black" />

@@ -40,7 +40,7 @@ export interface IVenta {
   cambio: number;
   estado: boolean;
   metodos_pago: MetodoPagoItem[];
-  id_cliente?: number;
+  id_cliente: number | null;
 }
 
 interface ISaleDetail {
@@ -105,9 +105,9 @@ export default function SalesHistory() {
     id: number,
     metodos_pago: MetodoPagoItem[],
     total: number,
+    id_cliente: number | null,
     subtotal?: number,
-    impuestoAmount?: number,
-    id_cliente?: number | null
+    impuestoAmount?: number
   ) => {
     const listaDetails = await cargarDetalles(id);
     let listaProductsSaled: Array<CartItem> = [];
@@ -136,7 +136,7 @@ export default function SalesHistory() {
       id_cliente !== null
         ? ((await clientesRepository.getById(id_cliente)) as Cliente)
         : { id: 0, nombre: "Cliente de normal", numero: "", ruc: "" };
-    console.log(cliente);
+    console.log("Cliente:", cliente);
     setSelectedPrintData({
       items: listaProductsSaled,
       payments,
@@ -158,9 +158,9 @@ export default function SalesHistory() {
           selectedPrintData.payments,
           selectedPrintData.total,
           selectedPrintData.numSale,
+          selectedPrintData.clienteInfo,
           selectedPrintData.subtotal,
-          selectedPrintData.impuestoAmount,
-          selectedPrintData.clienteInfo
+          selectedPrintData.impuestoAmount
         );
       } else {
         await PrintInvoice(
@@ -168,9 +168,9 @@ export default function SalesHistory() {
           selectedPrintData.payments,
           selectedPrintData.total,
           selectedPrintData.numSale,
+          selectedPrintData.clienteInfo,
           selectedPrintData.subtotal,
-          selectedPrintData.impuestoAmount,
-          selectedPrintData.clienteInfo
+          selectedPrintData.impuestoAmount
         );
       }
       setSelectedPrintData(null);

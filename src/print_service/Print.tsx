@@ -12,9 +12,9 @@ export const PrintTicket = async (
   payments: PaymentMethod[],
   total: number,
   numSale: number,
+  clienteInfo: Cliente,
   subtotal?: number,
-  impuestoAmount?: number,
-  clienteInfo?: Cliente
+  impuestoAmount?: number
 ) => {
   try {
     let productFormat: string = "";
@@ -82,7 +82,9 @@ export const PrintTicket = async (
         <div class="summary">
           <strong>PAGOS:</strong>
           ${paymentsFormat}
-          ${impuestoAmount !== undefined ? `
+          ${
+            impuestoAmount !== undefined
+              ? `
           <div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;">
             <span>SUBTOTAL</span>
             <span>C$ ${(subtotal ?? total).toFixed(2)}</span>
@@ -91,7 +93,9 @@ export const PrintTicket = async (
             <span>IMPUESTO${(subtotal ?? total) > 0 ? ` (${((impuestoAmount / (subtotal ?? total)) * 100).toFixed(1)}%)` : ''}</span>
             <span>C$ ${impuestoAmount.toFixed(2)}</span>
           </div>
-          ` : ``}
+          `
+              : ``
+          }
           <div class="summary-total">
             <span>TOTAL</span>
             <span>C$ ${total.toFixed(2)}</span>
@@ -119,9 +123,9 @@ export const PrintInvoice = async (
   payments: PaymentMethod[],
   total: number,
   numSale: number,
+  clienteInfo: Cliente,
   subtotal?: number,
-  impuestoAmount?: number,
-  clienteInfo?: Cliente
+  impuestoAmount?: number
 ) => {
   try {
     let productRows = "";
@@ -305,6 +309,7 @@ export const PrintInvoice = async (
     }
   } catch (error) {
     Alert.alert("Alerta", "La generación de la factura PDF ha fallado");
+    console.error(error);
   }
 };
 

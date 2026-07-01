@@ -38,9 +38,9 @@ export default function ProcessSale() {
           saleData.payments,
           saleData.total,
           saleData.numSale,
+          saleData.cliente,
           saleData.subtotal,
-          saleData.impuestoAmount,
-          saleData.cliente
+          saleData.impuestoAmount
         );
       } else {
         await PrintInvoice(
@@ -48,9 +48,9 @@ export default function ProcessSale() {
           saleData.payments,
           saleData.total,
           saleData.numSale,
+          saleData.cliente,
           saleData.subtotal,
-          saleData.impuestoAmount,
-          saleData.cliente
+          saleData.impuestoAmount
         );
       }
       setSaleData(null);

@@ -42,6 +42,7 @@ interface CartState {
   addItem: (product: Product) => void;
   removeItem: (productId: number) => void;
   updateQuantity: (productId: number, quantity: number) => void;
+  updateProduct: (product: Product) => void;
   calcularTotal: () => Promise<void>;
   clearCart: () => void;
 }
@@ -90,6 +91,16 @@ export const useCartStore = create<CartState>((set, get) => ({
     await calcularTotal();
   },
   setPayments: (payments) => set({ payments: payments }),
+  updateProduct: (product) => {
+    const { items, calcularTotal } = get();
+    const updatedItems = items.map((item) =>
+      item.product.id === product.id
+        ? { ...item, product }
+        : item
+    );
+    set({ items: updatedItems });
+    calcularTotal();
+  },
   calcularTotal: async () => {
     const { items } = get();
     let rate = 0;

@@ -15,14 +15,19 @@ export const ProductRepository = {
     const database = await db;
     return database.getFirstAsync("SELECT * FROM productos WHERE id = ?", [id]);
   },
+  async getByIdCategoria(id: number) {
+    const database = await db;
+    return database.getAllAsync(
+      "SELECT * FROM productos WHERE categoria_id = ?",
+      [id]
+    );
+  },
 
-  async search(term: string, cat?: number) {
+  async search(term: string) {
     const database = await db;
     const like = `%${term}%`;
-    const parms = cat ? [cat, like, like] : [like, like];
-    const query = cat
-      ? `SELECT * FROM productos WHERE categoria_id = ? AND nombre LIKE ? OR codigo LIKE ? `
-      : `SELECT * FROM productos WHERE nombre LIKE ? OR codigo LIKE ?`;
+    const parms = [like, like];
+    const query = `SELECT * FROM productos WHERE nombre LIKE ? OR codigo LIKE ?`;
     return database.getAllAsync(query, parms);
   },
 
