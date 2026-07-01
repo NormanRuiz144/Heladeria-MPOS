@@ -89,7 +89,7 @@ export default function ClienteSearch() {
           <View style={styles.buttonsContainer}>
             <Pressable
               style={styles.scanButton}
-              onPress={() => router.navigate("/cliente/scanner?modo=scan")}
+              onPress={() => router.navigate({ pathname: "/cliente/scanner", params: { modo: "scan" } })}
             >
               <Ionicons name="qr-code" size={24} color="white" />
               <Text style={styles.scanButtonText}>Buscar</Text>

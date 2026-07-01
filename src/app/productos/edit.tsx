@@ -33,7 +33,8 @@ interface Producto {
 }
 
 export default function editarProducto() {
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const { id } = params;
   const idRef = useRef(id);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
@@ -47,9 +48,6 @@ export default function editarProducto() {
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
   const [showPicker, setShowPicker] = useState(false);
-  const params = useLocalSearchParams();
-  const id = Number(params?.id as string) || undefined;
-
   const validar = () => {
     if (!nombre.trim()) {
       Alert.alert("Error", "El nombre es obligatorio.");
@@ -96,7 +94,7 @@ export default function editarProducto() {
       setCodigoBarras((Math.random() * 1000000000).toFixed());
       return;
     } else {
-      router.navigate("/pos/scanner?modo=asig&apartado=edit");
+      router.navigate({ pathname: "/pos/scanner", params: { modo: "asig", apartado: "edit" } });
     }
   };
 

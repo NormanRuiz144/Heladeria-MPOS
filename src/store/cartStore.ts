@@ -91,14 +91,12 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
   setPayments: (payments) => set({ payments: payments }),
   calcularTotal: async () => {
-    const { items, impuestoRate } = get();
-    let rate = impuestoRate;
-    if (rate === 0) {
-      try {
-        const empresa = await empresaRepository.getFirst();
-        rate = empresa?.impuesto || 0;
-      } catch {}
-    }
+    const { items } = get();
+    let rate = 0;
+    try {
+      const empresa = await empresaRepository.getFirst();
+      rate = empresa?.impuesto || 0;
+    } catch {}
     const subtotal = items.reduce(
       (sum, item) => sum + item.product.precio * item.quantity,
       0

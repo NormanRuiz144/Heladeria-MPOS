@@ -110,6 +110,14 @@ try {
   console.log("La columna 'info_relevante' ya existía o no se pudo crear:", error);
 }
 
+// Migración para la columna 'codigo_barras' (retrocompatibilidad con BD existentes)
+try {
+  await database.runAsync("ALTER TABLE productos ADD COLUMN codigo_barras TEXT UNIQUE;");
+  console.log("Columna 'codigo_barras' verificada/añadida con éxito.");
+} catch (error) {
+  console.log("La columna 'codigo_barras' ya existía o no se pudo crear:", error);
+}
+
 
     try {
       await database.runAsync(
@@ -141,6 +149,14 @@ try {
       console.log("Columna 'impuesto_amount' verificada/añadida con éxito.");
     } catch {
       console.log("La columna 'impuesto_amount' ya existía o no se pudo crear.");
+    }
+    try {
+      await database.runAsync(
+        "ALTER TABLE ventas ADD COLUMN id_cliente INTEGER"
+      );
+      console.log("Columna 'id_cliente' verificada/añadida con éxito.");
+    } catch (error) {
+      console.log("La columna 'id_cliente' ya existía o no se pudo crear:", error);
     }
 
     try {

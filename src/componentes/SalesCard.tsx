@@ -73,9 +73,7 @@ export default function SalesCard({
       <Text>Fecha de Venta: {item.fecha}</Text>
       <Text>Monto Pagado: C${item.monto_pagado}</Text>
       <Text>Subtotal: C${item.subtotal?.toFixed(2) ?? item.total.toFixed(2)}</Text>
-      {item.impuesto_amount > 0 && (
-        <Text>Impuesto: C${item.impuesto_amount.toFixed(2)}</Text>
-      )}
+      <Text>Impuesto{(item.subtotal ?? 0) > 0 ? ` (${(((item.impuesto_amount ?? 0) / (item.subtotal ?? 1)) * 100).toFixed(1)}%)` : ''}: C${(item.impuesto_amount ?? 0).toFixed(2)}</Text>
       <Text>Total: C${item.total}</Text>
 
       {hasEfectivo(item.metodos_pago) && item.cambio > 0 && (

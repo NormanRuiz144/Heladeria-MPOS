@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   StyleSheet,
   View,
@@ -21,6 +22,12 @@ import { VariosRepository } from "../../database/repositories/variosRepository";
 export default function pos() {
   const items = useCartStore((state) => state.items);
   const [modalVisible, setModalVisible] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      useCartStore.getState().calcularTotal();
+    }, [])
+  );
   const [desc, setDesc] = useState("");
   const [motivo, setMotivo] = useState("");
   const [monto, setMonto] = useState("");

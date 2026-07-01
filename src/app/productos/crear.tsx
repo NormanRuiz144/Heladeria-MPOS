@@ -64,33 +64,6 @@ export default function CrearProductos() {
     }
   };
 
-  const manejarSeleccionImagen = async () => {
-    const permisos = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permisos.granted) {
-      Alert.alert("Permiso requerido", "Necesitamos acceso a tus fotos.");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-    });
-
-    if (result.canceled) return;
-
-    const uriOriginal = result.assets[0].uri;
-    const nombreArchivo = `producto_${Date.now()}.jpg`;
-    if (!FileSystem.documentDirectory) {
-      Alert.alert("Error", "No se pudo acceder al directorio de documentos");
-      return;
-    }
-    const rutaPermanente = `${FileSystem.documentDirectory}${nombreArchivo}`;
-    await FileSystem.copyAsync({ from: uriOriginal, to: rutaPermanente });
-    setImagen(rutaPermanente);
-  };
-
   const validar = () => {
     if (!nombre.trim()) {
       Alert.alert("Error", "El nombre es obligatorio.");

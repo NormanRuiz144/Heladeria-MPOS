@@ -33,7 +33,7 @@ export default function CrearProductos() {
     setClienteList(list);
   };
   const asignarRuc = () => {
-    router.navigate("/cliente/scanner?modo=asignar");
+    router.navigate({ pathname: "/cliente/scanner", params: { modo: "asignar" } });
   };
 
   const validar = () => {

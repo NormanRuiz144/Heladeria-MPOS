@@ -88,7 +88,7 @@ export const PrintTicket = async (
             <span>C$ ${(subtotal ?? total).toFixed(2)}</span>
           </div>
           <div class="summary-total" style="border-top: none; padding-top: 0; font-weight: normal; font-size: 12px;">
-            <span>IMPUESTO</span>
+            <span>IMPUESTO${(subtotal ?? total) > 0 ? ` (${((impuestoAmount / (subtotal ?? total)) * 100).toFixed(1)}%)` : ''}</span>
             <span>C$ ${impuestoAmount.toFixed(2)}</span>
           </div>
           ` : ``}
@@ -277,7 +277,7 @@ export const PrintInvoice = async (
                     <td style="text-align: right;">C$ ${(subtotal ?? total).toFixed(2)}</td>
                 </tr>
                 <tr>
-                    <td style="text-align: right;"><strong>Impuesto:</strong></td>
+                    <td style="text-align: right;"><strong>Impuesto${(subtotal ?? total) > 0 ? ` (${((impuestoAmount / (subtotal ?? total)) * 100).toFixed(1)}%)` : ''}:</strong></td>
                     <td style="text-align: right;">C$ ${impuestoAmount.toFixed(2)}</td>
                 </tr>
                 `
@@ -341,6 +341,7 @@ export const PrintSalesReport = async (
             <td>#${item.id}</td>
             <td>${item.fecha.split(" ")[0]}</td>
             <td>${item.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
+            <td>${(item.subtotal ?? 0) > 0 ? `(${(((item.impuesto_amount ?? 0) / (item.subtotal ?? 1)) * 100).toFixed(1)}%) ` : ''}C$ ${(item.impuesto_amount ?? 0).toFixed(2)}</td>
             <td style="color: ${item.estado ? "red" : "black"}">
               ${item.estado ? "ANULADA" : "C$ " + item.total.toFixed(2)}
             </td>
@@ -353,6 +354,7 @@ export const PrintSalesReport = async (
             <td>EXTRA</td>
             <td>${item.fecha.split(" ")[0]}</td>
             <td>${item.descripcion} (${item.motivo})</td>
+            <td>—</td>
             <td>C$ ${item.monto.toFixed(2)}</td>
           </tr>
         `;
@@ -394,6 +396,7 @@ export const PrintSalesReport = async (
             <th>ID / Tipo</th>
             <th>Fecha</th>
             <th>Detalle / Método</th>
+            <th>Impuesto</th>
             <th>Monto</th>
           </tr>
         </thead>

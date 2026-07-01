@@ -42,7 +42,7 @@ export default function EmpresaScreen() {
         setLogo(empresa.logo || "");
       }
     } catch (error) {
-      console.log("Error loading empresa:", error);
+      console.log("Error al cargar empresa:", error);
     }
   };
 

@@ -64,26 +64,30 @@ export default function ProcessSale() {
   const handleSale = async () => {
     if (isProcessing.current) return;
     try {
-      if (items.length > 0 && total > 0 && payments.length === 0) {
+      // Refresh totals with current tax rate from DB
+      await useCartStore.getState().calcularTotal();
+      const { total: freshTotal, subtotal: freshSubtotal, impuestoAmount: freshImpuestoAmount } = useCartStore.getState();
+
+      if (items.length > 0 && freshTotal > 0 && payments.length === 0) {
         setShowPayment(true);
         return;
       }
-      if (items.length > 0 && total && payments.length > 0) {
+      if (items.length > 0 && freshTotal && payments.length > 0) {
         isProcessing.current = true;
         const database = await db;
         const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
         const soloEfectivo = payments.every((p) => p.type === "efectivo");
-        const cambio = soloEfectivo ? montoPagado - total : 0;
+        const cambio = soloEfectivo ? montoPagado - freshTotal : 0;
 
         await database.execAsync("BEGIN TRANSACTION");
 
         try {
           const resultsale = await SaleRepository.create(
-            total,
+            freshTotal,
             montoPagado,
             cambio,
-            subtotal,
-            impuestoAmount,
+            freshSubtotal,
+            freshImpuestoAmount,
             clientId
           );
 
@@ -128,9 +132,9 @@ export default function ProcessSale() {
             items: [...items],
             payments,
             cambio,
-            total,
-            subtotal,
-            impuestoAmount,
+            total: freshTotal,
+            subtotal: freshSubtotal,
+            impuestoAmount: freshImpuestoAmount,
             numSale: resultsale.lastInsertRowId,
             cliente: clienteInfo,
           });
