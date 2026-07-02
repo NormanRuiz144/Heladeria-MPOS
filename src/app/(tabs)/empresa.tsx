@@ -30,6 +30,7 @@ export default function EmpresaScreen() {
   const loadEmpresa = async () => {
     try {
       let empresa = await empresaRepository.getFirst();
+      console.log(empresa);
       if (!empresa) {
         await empresaRepository.initialize();
         empresa = await empresaRepository.getFirst();
@@ -83,7 +84,10 @@ export default function EmpresaScreen() {
       return false;
     }
     if (!impuesto.trim() || isNaN(Number(impuesto)) || Number(impuesto) < 0) {
-      Alert.alert("Error", "El impuesto debe ser un número mayor o igual a cero.");
+      Alert.alert(
+        "Error",
+        "El impuesto debe ser un número mayor o igual a cero."
+      );
       return false;
     }
     if (!logo) {
@@ -169,7 +173,8 @@ export default function EmpresaScreen() {
         >
           <FontAwesome5 name="save" size={16} color="white" />
           <Text style={styles.btnGuardarText}>
-            {" "}{loading ? "Guardando..." : "Guardar"}
+            {" "}
+            {loading ? "Guardando..." : "Guardar"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

@@ -22,6 +22,8 @@ import { CategoriaRepository } from "../../database/repositories/categoriaReposi
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
+import { useCartStore } from "../../store/cartStore";
+import { Product } from "../movimientos/crear";
 
 interface Producto {
   id: number;
@@ -48,6 +50,7 @@ export default function editarProducto() {
   const [imagen, setImagen] = useState("");
   const [info_relevante, setInfo_relevante] = useState("");
   const [showPicker, setShowPicker] = useState(false);
+
   const validar = () => {
     if (!nombre.trim()) {
       Alert.alert("Error", "El nombre es obligatorio.");
@@ -94,7 +97,10 @@ export default function editarProducto() {
       setCodigoBarras((Math.random() * 1000000000).toFixed());
       return;
     } else {
-      router.navigate({ pathname: "/pos/scanner", params: { modo: "asig", apartado: "edit" } });
+      router.navigate({
+        pathname: "/pos/scanner",
+        params: { modo: "asig", apartado: "edit" },
+      });
     }
   };
 
@@ -106,11 +112,11 @@ export default function editarProducto() {
     setShowPicker(false);
     const permisos = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permisos.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a tus fotos.');
+      Alert.alert("Permiso requerido", "Necesitamos acceso a tus fotos.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.6,
@@ -123,18 +129,18 @@ export default function editarProducto() {
     setShowPicker(false);
     const permisos = await ImagePicker.requestCameraPermissionsAsync();
     if (!permisos.granted) {
-      Alert.alert('Permiso requerido', 'Necesitamos acceso a la cámara.');
+      Alert.alert("Permiso requerido", "Necesitamos acceso a la cámara.");
       return;
     }
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.6,
     });
     if (result.canceled) return;
     await procesarImagenSeleccionada(result.assets[0].uri);
-  }
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -190,6 +196,16 @@ export default function editarProducto() {
         imagen,
         info_relevante
       );
+      const productUpdated: Product = {
+        id: Number(idRef.current),
+        nombre,
+        precio: Number(precio),
+        stock: Number(stock),
+        codigo,
+        imagen,
+        info_relevante,
+      };
+      useCartStore.getState().updateProduct(productUpdated);
       Alert.alert("Exito", "Producto actualizado exitosamente.");
     } catch (error) {
       console.log(error);
@@ -224,20 +240,23 @@ export default function editarProducto() {
         />
         <InputField placeholder="Stock" value={stock} onChangeText={setStock} />
 
-      <TouchableOpacity style={styles.buttonImaje} onPress={manejarSeleccionImagen}>
-        <Text style={styles.buttonText}>Agregar Imagen</Text>
-      </TouchableOpacity>
-      {imagen ? (
-        <View style={styles.imagePreviewContainer}>
-          <Image source={{ uri: imagen }} style={styles.imagePreview} />
-          <TouchableOpacity
-            style={styles.imageDismissButton}
-            onPress={() => setImagen("")}
-          >
-            <Text style={styles.imageDismissText}>X</Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
+        <TouchableOpacity
+          style={styles.buttonImaje}
+          onPress={manejarSeleccionImagen}
+        >
+          <Text style={styles.buttonText}>Agregar Imagen</Text>
+        </TouchableOpacity>
+        {imagen ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: imagen }} style={styles.imagePreview} />
+            <TouchableOpacity
+              style={styles.imageDismissButton}
+              onPress={() => setImagen("")}
+            >
+              <Text style={styles.imageDismissText}>X</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View style={styles.barcodeContanier}>
           <Text style={{ fontWeight: "bold", fontSize: 16 }}>
@@ -296,26 +315,45 @@ export default function editarProducto() {
           <Text style={styles.buttonText}>Guardar Cambios</Text>
         </TouchableOpacity>
 
-      <Modal visible={showPicker} transparent animationType="fade" onRequestClose={() => setShowPicker(false)}>
-        <Pressable style={styles.overlay} onPress={() => setShowPicker(false)}>
-          <Pressable style={styles.pickerContainer} onPress={() => {}}>
-            <Text style={styles.pickerTitle}>¿De dónde obtener la imagen?</Text>
-            <View style={styles.pickerRow}>
-              <TouchableOpacity style={styles.pickerBtnLeft} onPress={tomarFoto}>
-                <MaterialIcons name="camera-alt" size={20} color="#fff" />
-                <Text style={styles.pickerBtnText}> Tomar foto</Text>
+        <Modal
+          visible={showPicker}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowPicker(false)}
+        >
+          <Pressable
+            style={styles.overlay}
+            onPress={() => setShowPicker(false)}
+          >
+            <Pressable style={styles.pickerContainer} onPress={() => {}}>
+              <Text style={styles.pickerTitle}>
+                ¿De dónde obtener la imagen?
+              </Text>
+              <View style={styles.pickerRow}>
+                <TouchableOpacity
+                  style={styles.pickerBtnLeft}
+                  onPress={tomarFoto}
+                >
+                  <MaterialIcons name="camera-alt" size={20} color="#fff" />
+                  <Text style={styles.pickerBtnText}> Tomar foto</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.pickerBtnRight}
+                  onPress={seleccionarGaleria}
+                >
+                  <MaterialIcons name="photo-library" size={20} color="#fff" />
+                  <Text style={styles.pickerBtnText}> Galería</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                style={styles.pickerCancel}
+                onPress={() => setShowPicker(false)}
+              >
+                <Text style={styles.pickerCancelText}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.pickerBtnRight} onPress={seleccionarGaleria}>
-                <MaterialIcons name="photo-library" size={20} color="#fff" />
-                <Text style={styles.pickerBtnText}> Galería</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.pickerCancel} onPress={() => setShowPicker(false)}>
-              <Text style={styles.pickerCancelText}>Cancelar</Text>
-            </TouchableOpacity>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
