@@ -93,29 +93,29 @@ export const runMigrations = async () => {
 
   const database = await db;
 
-// MigraciÃ³n para la columna 'imagen'
+// Migración para la columna 'imagen'
 try {
   await database.runAsync("ALTER TABLE productos ADD COLUMN imagen TEXT;");
-  console.log("Columna 'imagen' verificada/aÃ±adida con Ã©xito.");
+  console.log("Columna 'imagen' verificada/añadida con éxito.");
 } catch (error) {
-  // EntrarÃ¡ aquÃ­ si la columna ya existÃ­a, lo cual es normal en la segunda ejecuciÃ³n
-  console.log("La columna 'imagen' ya existÃ­a o no se pudo crear:", error);
+  // Entrará aquí si la columna ya existía, lo cual es normal en la segunda ejecución
+  console.log("La columna 'imagen' ya existía o no se pudo crear:", error);
 }
 
-// MigraciÃ³n para la columna 'info_relevante'
+// Migración para la columna 'info_relevante'
 try {
   await database.runAsync("ALTER TABLE productos ADD COLUMN info_relevante TEXT;");
-  console.log("Columna 'info_relevante' verificada/aÃ±adida con Ã©xito.");
+  console.log("Columna 'info_relevante' verificada/añadida con éxito.");
 } catch (error) {
-  console.log("La columna 'info_relevante' ya existÃ­a o no se pudo crear:", error);
+  console.log("La columna 'info_relevante' ya existía o no se pudo crear:", error);
 }
 
-// MigraciÃ³n para la columna 'codigo_barras' (retrocompatibilidad con BD existentes)
+// Migración para la columna 'codigo_barras' (retrocompatibilidad con BD existentes)
 try {
   await database.runAsync("ALTER TABLE productos ADD COLUMN codigo_barras TEXT UNIQUE;");
-  console.log("Columna 'codigo_barras' verificada/aÃ±adida con Ã©xito.");
+  console.log("Columna 'codigo_barras' verificada/añadida con éxito.");
 } catch (error) {
-  console.log("La columna 'codigo_barras' ya existÃ­a o no se pudo crear:", error);
+  console.log("La columna 'codigo_barras' ya existía o no se pudo crear:", error);
 }
 
 
@@ -138,25 +138,25 @@ try {
       await database.runAsync(
         "ALTER TABLE ventas ADD COLUMN subtotal REAL;"
       );
-      console.log("Columna 'subtotal' verificada/aÃ±adida con Ã©xito.");
+      console.log("Columna 'subtotal' verificada/añadida con éxito.");
     } catch {
-      console.log("La columna 'subtotal' ya existÃ­a o no se pudo crear.");
+      console.log("La columna 'subtotal' ya existía o no se pudo crear.");
     }
     try {
       await database.runAsync(
         "ALTER TABLE ventas ADD COLUMN impuesto_amount REAL;"
       );
-      console.log("Columna 'impuesto_amount' verificada/aÃ±adida con Ã©xito.");
+      console.log("Columna 'impuesto_amount' verificada/añadida con éxito.");
     } catch {
-      console.log("La columna 'impuesto_amount' ya existÃ­a o no se pudo crear.");
+      console.log("La columna 'impuesto_amount' ya existía o no se pudo crear.");
     }
     try {
       await database.runAsync(
         "ALTER TABLE ventas ADD COLUMN id_cliente INTEGER"
       );
-      console.log("Columna 'id_cliente' verificada/aÃ±adida con Ã©xito.");
+      console.log("Columna 'id_cliente' verificada/añadida con éxito.");
     } catch (error) {
-      console.log("La columna 'id_cliente' ya existÃ­a o no se pudo crear:", error);
+      console.log("La columna 'id_cliente' ya existía o no se pudo crear:", error);
     }
 
     try {
@@ -175,7 +175,7 @@ try {
         "ALTER TABLE productos ADD COLUMN categoria_id INTEGER DEFAULT 1"
       );
     } catch (e) {
-      // Si falla es porque la columna ya existe, lo cual estÃ¡ bien
+      // Si falla es porque la columna ya existe, lo cual está bien
     }
     try {
       await database.runAsync("ALTER TABLE ventas DROP COLUMN metodo_pago");
@@ -190,6 +190,14 @@ try {
     try {
       await database.runAsync("ALTER TABLE empresa ADD COLUMN direccion TEXT;");
     } catch {}
+
+    // Migración: vincular ventas_varias a una venta (ventas combinadas)
+    try {
+      await database.runAsync("ALTER TABLE ventas_varias ADD COLUMN ventas_id INTEGER DEFAULT NULL");
+      console.log("Columna 'ventas_id' verificada/añadida en ventas_varias con éxito.");
+    } catch (error) {
+      console.log("La columna 'ventas_id' ya existía en ventas_varias o no se pudo crear:", error);
+    }
   } catch (error) {
     console.log("Migration error:", error);
   };

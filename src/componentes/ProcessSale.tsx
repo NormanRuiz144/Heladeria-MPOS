@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, View } from "react-native";
+﻿import { Alert, StyleSheet, View } from "react-native";
 import { useCartStore } from "../store/cartStore";
 import { db } from "../database/database";
 import { MovementRepository } from "../database/repositories/movementRepository";
@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import CustomButton from "./CustomButton";
 import { SaleRepository } from "../database/repositories/saleRepository";
 import { SaleDetailRepository } from "../database/repositories/saleDetailRepository";
+import { VariosRepository } from "../database/repositories/variosRepository";
 import { PrintTicket, PrintInvoice } from "../print_service/Print";
 import PrintOptionsModal from "./PrintOptionsModal";
 import {
@@ -64,7 +65,6 @@ export default function ProcessSale() {
   const handleSale = async () => {
     if (isProcessing.current) return;
     try {
-      // Refresh totals with current tax rate from DB
       await useCartStore.getState().calcularTotal();
       const { total: freshTotal, subtotal: freshSubtotal, impuestoAmount: freshImpuestoAmount } = useCartStore.getState();
 
@@ -100,24 +100,32 @@ export default function ProcessSale() {
           }
 
           for (const item of items) {
-            await MovementRepository.create(
-              item.product.id,
-              "Venta POS",
-              "salida",
-              item.quantity,
-              resultsale.lastInsertRowId
-            );
-            await ProductRepository.adjustStock(
-              item.product.id,
-              -item.quantity
-            );
-
-            await SaleDetailRepository.create(
-              resultsale.lastInsertRowId,
-              item.product.id,
-              item.quantity,
-              item.product.precio
-            );
+            if (item.product.codigo === "EXTRA") {
+              await VariosRepository.createWithVentaId(
+                item.product.nombre,
+                item.product.info_relevante || "Extra",
+                item.product.precio,
+                resultsale.lastInsertRowId
+              );
+            } else {
+              await MovementRepository.create(
+                item.product.id,
+                "Venta POS",
+                "salida",
+                item.quantity,
+                resultsale.lastInsertRowId
+              );
+              await ProductRepository.adjustStock(
+                item.product.id,
+                -item.quantity
+              );
+              await SaleDetailRepository.create(
+                resultsale.lastInsertRowId,
+                item.product.id,
+                item.quantity,
+                item.product.precio
+              );
+            }
           }
 
           const clienteInfo =

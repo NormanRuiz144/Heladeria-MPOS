@@ -1,7 +1,6 @@
-import * as Print from "expo-print";
+﻿import * as Print from "expo-print";
 import { shareAsync, isAvailableAsync } from "expo-sharing";
-import { CartItem } from "../store/cartStore";
-import { PaymentMethod } from "../store/cartStore";
+import { CartItem, PaymentMethod } from "../store/cartStore";
 import { Alert } from "react-native";
 import { empresaRepository } from "../database/repositories/empresaRepository";
 import { readAsStringAsync, EncodingType } from "expo-file-system/legacy";
@@ -19,13 +18,24 @@ export const PrintTicket = async (
   try {
     let productFormat: string = "";
     for (let item of items) {
-      productFormat += `
-        <div class="item">
-          <span class="item-name">${item.product.nombre}</span>
-          <span class="item-qty">x${item.quantity}</span>
-          <span class="item-price">C$ ${item.product.precio * item.quantity}</span>
-        </div>
-      `;
+      const isExtra = item.product.codigo === "EXTRA";
+      if (isExtra) {
+        productFormat += `
+          <div class="item extra-item">
+            <span class="item-name">${item.product.nombre}</span>
+            <span class="item-qty"></span>
+            <span class="item-price">C$ ${item.product.precio.toFixed(2)}</span>
+          </div>
+        `;
+      } else {
+        productFormat += `
+          <div class="item">
+            <span class="item-name">${item.product.nombre}</span>
+            <span class="item-qty">x${item.quantity}</span>
+            <span class="item-price">C$ ${(item.product.precio * item.quantity).toFixed(2)}</span>
+          </div>
+        `;
+      }
     }
 
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -63,6 +73,7 @@ export const PrintTicket = async (
         .item-name { width: 35mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .item-qty { width: 20px; text-align: center; font-size: 11px;}
         .item-price { width: 45px; text-align: right; font-size: 11px; }
+        .extra-item { background-color: #f5f5f5; }
         .total { font-weight: bold; font-size: 14px; margin-top: 10px; }
         .payment-line { display: flex; justify-content: space-between; }
         .payment-amount { text-align: right; }
@@ -105,7 +116,6 @@ export const PrintTicket = async (
 
     const { uri } = await Print.printToFileAsync({ html: ticketFormat });
 
-    // Compartir el PDF generado d=====(￣▽￣*)b
     if (await isAvailableAsync()) {
       await shareAsync(uri, { UTI: ".pdf", mimeType: "application/pdf" });
     }
@@ -126,15 +136,28 @@ export const PrintInvoice = async (
   try {
     let productRows = "";
     for (let item of items) {
-      productRows += `
-        <tr>
-          <td>${item.product.codigo || "-"}</td>
-          <td>${item.product.nombre}</td>
-          <td style="text-align: center;">${item.quantity}</td>
-          <td style="text-align: right;">C$ ${item.product.precio.toFixed(2)}</td>
-          <td style="text-align: right;">C$ ${(item.product.precio * item.quantity).toFixed(2)}</td>
-        </tr>
-      `;
+      const isExtra = item.product.codigo === "EXTRA";
+      if (isExtra) {
+        productRows += `
+          <tr style="background-color: #f5f5f5;">
+            <td>EXTRA</td>
+            <td>${item.product.nombre}</td>
+            <td style="text-align: center;">1</td>
+            <td style="text-align: right;">C$ ${item.product.precio.toFixed(2)}</td>
+            <td style="text-align: right;">C$ ${item.product.precio.toFixed(2)}</td>
+          </tr>
+        `;
+      } else {
+        productRows += `
+          <tr>
+            <td>${item.product.codigo || "-"}</td>
+            <td>${item.product.nombre}</td>
+            <td style="text-align: center;">${item.quantity}</td>
+            <td style="text-align: right;">C$ ${item.product.precio.toFixed(2)}</td>
+            <td style="text-align: right;">C$ ${(item.product.precio * item.quantity).toFixed(2)}</td>
+          </tr>
+        `;
+      }
     }
 
     const montoPagado = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -309,7 +332,7 @@ export const PrintInvoice = async (
 };
 
 export const PrintSalesReport = async (
-  sales: any[], // Esta lista ahora contiene objetos combinados con la propiedad 'tipo'
+  sales: any[],
   totalPeriodo: number,
   startDate: string,
   endDate: string
@@ -331,14 +354,13 @@ export const PrintSalesReport = async (
       }
     }
 
-    // Generamos las filas de la tabla de ventas
     let rowsFormat = "";
     sales.forEach((item) => {
       if (item.tipo === "venta") {
-        // Formato para ventas normales
+        const tieneExtra = item.tiene_extras;
         rowsFormat += `
-          <tr>
-            <td>#${item.id}</td>
+          <tr${tieneExtra ? ' style="background-color: #fff9f0;"' : ""}>
+            <td>#${item.id}${tieneExtra ? " + EXTRA" : ""}</td>
             <td>${item.fecha.split(" ")[0]}</td>
             <td>${item.metodos_pago?.map((m: any) => m.metodo_pago.toUpperCase()).join(" + ") || "—"}</td>
             <td>${(item.subtotal ?? 0) > 0 ? `(${(((item.impuesto_amount ?? 0) / (item.subtotal ?? 1)) * 100).toFixed(1)}%) ` : ''}C$ ${(item.impuesto_amount ?? 0).toFixed(2)}</td>
@@ -348,9 +370,8 @@ export const PrintSalesReport = async (
           </tr>
         `;
       } else {
-        // Formato para ventas extras
         rowsFormat += `
-          <tr style="background-color: #fff9f0;">
+          <tr style="background-color: #e8f5e9;">
             <td>EXTRA</td>
             <td>${item.fecha.split(" ")[0]}</td>
             <td>${item.descripcion} (${item.motivo})</td>

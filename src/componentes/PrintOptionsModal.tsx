@@ -1,4 +1,4 @@
-import {
+﻿import {
   Modal,
   StyleSheet,
   Text,
@@ -46,17 +46,20 @@ export default function PrintOptionsModal({
                 Vista Previa - Venta #{saleData.numSale}
               </Text>
               <ScrollView style={styles.previewScroll} nestedScrollEnabled>
-                {saleData.items.map((item, index) => (
-                  <View key={index} style={styles.previewItem}>
-                    <Text style={styles.itemName} numberOfLines={1}>
-                      {item.product.nombre}
-                    </Text>
-                    <Text style={styles.itemQty}>x{item.quantity}</Text>
-                    <Text style={styles.itemPrice}>
-                      C$ {(item.product.precio * item.quantity).toFixed(2)}
-                    </Text>
-                  </View>
-                ))}
+                {saleData.items.map((item, index) => {
+                  const isExtra = item.product.codigo === "EXTRA";
+                  return (
+                    <View key={index} style={[styles.previewItem, isExtra && styles.previewExtraItem]}>
+                      <Text style={styles.itemName} numberOfLines={1}>
+                        {item.product.nombre}
+                      </Text>
+                      <Text style={styles.itemQty}>{isExtra ? "" : `x${item.quantity}`}</Text>
+                      <Text style={styles.itemPrice}>
+                        C$ {(item.product.precio * item.quantity).toFixed(2)}
+                      </Text>
+                    </View>
+                  );
+                })}
               </ScrollView>
               <View style={styles.previewTotals}>
                 {saleData.payments.map((p, i) => {
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: "#eee",
-    maxHeight: 250, // Limitar altura para que el modal no sea tan grande
+    maxHeight: 250,
   },
   previewTitle: {
     fontWeight: "bold",
@@ -161,6 +164,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 5,
+  },
+  previewExtraItem: {
+    backgroundColor: "#fff9f0",
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 4,
   },
   itemName: {
     flex: 2,

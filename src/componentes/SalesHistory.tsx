@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SaleRepository } from "../database/repositories/saleRepository";
 import { MetodoPagoRepository } from "../database/repositories/metodoPagoRepository";
+import { VariosRepository } from "../database/repositories/variosRepository";
 import { FontAwesome5 } from "@expo/vector-icons";
 import SalesCard from "./SalesCard";
 import { MovementRepository } from "../database/repositories/movementRepository";
@@ -128,6 +129,22 @@ export default function SalesHistory() {
         quantity: detalle.cantidad,
       });
     }
+
+    const extras = await VariosRepository.getByVentaId(id);
+    const extraItems: CartItem[] = (extras as any[]).map((e) => ({
+      product: {
+        id: -e.id,
+        nombre: e.descripcion + (e.motivo ? " (" + e.motivo + ")" : ""),
+        precio: e.monto,
+        stock: 1,
+        codigo: "EXTRA",
+        info_relevante: e.motivo || "",
+      },
+      quantity: 1,
+    }));
+
+    const allItems = [...listaProductsSaled, ...extraItems];
+
     const payments: PaymentMethod[] = metodos_pago.map((mp) => ({
       type: mp.metodo_pago as PaymentType,
       amount: mp.monto,
@@ -136,9 +153,8 @@ export default function SalesHistory() {
       id_cliente !== null
         ? ((await clientesRepository.getById(id_cliente)) as Cliente)
         : { id: 0, nombre: "Cliente de normal", numero: "", ruc: "" };
-    console.log(cliente);
     setSelectedPrintData({
-      items: listaProductsSaled,
+      items: allItems,
       payments,
       total,
       subtotal,

@@ -1,4 +1,4 @@
-import {
+﻿import {
   FlatList,
   StyleSheet,
   Text,
@@ -10,8 +10,6 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Cart() {
-  //   const { items, total } = useCartStore();
-  // forma para subcribirse a un estado
   const items = useCartStore((state) => state.items);
   const total = useCartStore((state) => state.total);
   const subtotal = useCartStore((state) => state.subtotal);
@@ -23,36 +21,52 @@ export default function Cart() {
       <FlatList
         data={items}
         keyExtractor={(item) => item.product.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.item}>
-            <View>
-              <Text style={styles.name}>{item.product.nombre}</Text>
-            </View>
-            <View style={styles.itemDetails}>
-              <Text>{` C$${item.product.precio} x ${item.quantity} = C$${(item.product.precio * item.quantity).toFixed(2)} `}</Text>
-              <View style={styles.controls}>
-                <TouchableOpacity
-                  onPress={() =>
-                    updateQuantity(item.product.id, item.quantity - 1)
-                  }
-                >
-                  <AntDesign name="minus" size={20} color="red" />
-                </TouchableOpacity>
-                <Text style={styles.quantity}>{item.quantity}</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    updateQuantity(item.product.id, item.quantity + 1)
-                  }
-                >
-                  <AntDesign name="plus" size={20} color="green" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => removeItem(item.product.id)}>
-                  <AntDesign name="delete" size={20} color="red" />
-                </TouchableOpacity>
+        renderItem={({ item }) => {
+          const isExtra = item.product.codigo === "EXTRA";
+          return (
+            <View style={[styles.item, isExtra && styles.extraItem]}>
+              <View>
+                <Text style={styles.name}>{item.product.nombre}</Text>
+                {isExtra && item.product.info_relevante ? (
+                  <Text style={styles.motivo}>{item.product.info_relevante}</Text>
+                ) : null}
+              </View>
+              <View style={styles.itemDetails}>
+                {isExtra ? (
+                  <Text style={styles.extraAmount}>
+                    C$ {item.product.precio.toFixed(2)}
+                  </Text>
+                ) : (
+                  <Text>{` C$${item.product.precio} x ${item.quantity} = C$${(item.product.precio * item.quantity).toFixed(2)} `}</Text>
+                )}
+                <View style={styles.controls}>
+                  {!isExtra && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() =>
+                          updateQuantity(item.product.id, item.quantity - 1)
+                        }
+                      >
+                        <AntDesign name="minus" size={20} color="red" />
+                      </TouchableOpacity>
+                      <Text style={styles.quantity}>{item.quantity}</Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          updateQuantity(item.product.id, item.quantity + 1)
+                        }
+                      >
+                        <AntDesign name="plus" size={20} color="green" />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  <TouchableOpacity onPress={() => removeItem(item.product.id)}>
+                    <AntDesign name="delete" size={20} color="red" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        )}
+          );
+        }}
       />
       <View style={styles.totalContainer}>
         <Text style={styles.totalLine}>Subtotal: C${subtotal.toFixed(2)}</Text>
@@ -76,12 +90,26 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     borderRadius: 8,
   },
+  extraItem: {
+    backgroundColor: "#fff9f0",
+    borderLeftWidth: 3,
+    borderLeftColor: "#ff9800",
+  },
   itemDetails: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
   name: {
     fontWeight: "bold",
+  },
+  motivo: {
+    fontSize: 12,
+    color: "#888",
+  },
+  extraAmount: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#0ab546",
   },
   controls: {
     flexDirection: "row",

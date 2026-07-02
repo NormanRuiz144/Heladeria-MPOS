@@ -66,6 +66,8 @@ export default function Reportes() {
         venta.metodos_pago = (await MetodoPagoRepository.getByVentaId(
           venta.id
         )) as MetodoPagoItem[];
+        const ventaExtras = await VariosRepository.getByVentaId(venta.id);
+        (venta as any).tiene_extras = ventaExtras.length > 0;
       }
 
       const totalVentas = ventas.reduce(
@@ -179,6 +181,7 @@ export default function Reportes() {
                 anularVenta={() => {}}
                 printVoucher={() => {}}
                 zone="reporte"
+                tieneExtras={(item as any).tiene_extras}
               />
             </View>
           ) : (

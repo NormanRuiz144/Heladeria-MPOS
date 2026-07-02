@@ -6,6 +6,7 @@ import { FontAwesome5 } from "@expo/vector-icons";
 type SaleCardProps = {
   zone?: string;
   item: IVenta;
+  tieneExtras?: boolean;
   anularVenta: (id: number) => void;
   printVoucher: (
     id: number,
@@ -31,6 +32,7 @@ export default function SalesCard({
   anularVenta,
   printVoucher,
   zone = "venta",
+  tieneExtras,
 }: SaleCardProps) {
   return (
     <View
@@ -40,6 +42,12 @@ export default function SalesCard({
       ]}
     >
       <Text style={{ textAlign: "center" }}>Numero de Venta: #{item.id}</Text>
+      {tieneExtras && (
+        <View style={styles.extraBadge}>
+          <FontAwesome5 name="plus-circle" size={14} color="#ff9800" />
+          <Text style={styles.extraBadgeText}>Incluye Extra</Text>
+        </View>
+      )}
       <View
         style={{
           flexDirection: "column",
@@ -132,5 +140,21 @@ const styles = StyleSheet.create({
     padding: 4,
     marginTop: 5,
     borderRadius: 8,
+  },
+  extraBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fff3e0",
+    padding: 6,
+    borderRadius: 6,
+    marginVertical: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: "#ff9800",
+  },
+  extraBadgeText: {
+    color: "#ff9800",
+    fontWeight: "bold",
+    fontSize: 13,
   },
 });
